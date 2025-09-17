@@ -245,7 +245,7 @@ export default function SettingsPage() {
           {/* Preferences */}
           <div className="section">
             <div style={{ fontWeight: 700, marginBottom: 6 }}>Preferences</div>
-            <div className="sub" style={{ marginBottom: 8 }}>Personalize the appâ€™s appearance and review behavior.</div>
+            <div className="sub" style={{ marginBottom: 8 }}>Personalize the app's appearance and review behavior.</div>
 
             {/* Light Theme toggle */}
             <div className="row" title="Toggle between light and dark themes" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
@@ -262,7 +262,7 @@ export default function SettingsPage() {
 
             {/* Start review position */}
             <div className="row" title="Choose where the front board starts during review" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
-              <div>Start Review Withâ€¦</div>
+              <div>Start Review With...</div>
               <div className="sub">Initial or review position</div>
               <select
                 value={settings.frontStartAtReview ? 'review' : 'initial'}
@@ -561,3 +561,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

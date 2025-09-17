@@ -89,3 +89,7 @@
             allow customization to scheduling algorithm?
         implement correct display order
         implement correct new card display order
+9/16/25:
+    1 hour:
+        Fix weird characters on settings page again
+        
