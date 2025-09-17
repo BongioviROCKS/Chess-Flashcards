@@ -94,6 +94,47 @@ export default function SettingsPage() {
 
   const lightThemeChecked = settings.theme === 'light';
 
+  const holdRate = Number(settings.boardHoldStepsPerSecond ?? 0);
+  const HOLD_MIN = 0;
+  const HOLD_MAX = 20;
+  const HOLD_STEP = 0.1;
+  const clampHoldRate = (next: number) => {
+    if (!Number.isFinite(next) || next < HOLD_MIN) next = HOLD_MIN;
+    if (next > HOLD_MAX) next = HOLD_MAX;
+    return Math.round(next * 10) / 10;
+  };
+  const applyHoldRate = (next: number) => {
+    const clamped = clampHoldRate(next);
+    update({ boardHoldStepsPerSecond: clamped });
+    setHoldRateDraft(clamped.toFixed(1));
+  };
+  const [holdRateDraft, setHoldRateDraft] = useState<string>(() => holdRate.toFixed(1));
+  useEffect(() => {
+    setHoldRateDraft(holdRate.toFixed(1));
+  }, [holdRate]);
+  const commitHoldRate = (value: string) => {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      applyHoldRate(parsed);
+    } else {
+      setHoldRateDraft(holdRate.toFixed(1));
+    }
+  };
+  const incHoldRate = () => applyHoldRate(holdRate + HOLD_STEP);
+  const decHoldRate = () => applyHoldRate(holdRate - HOLD_STEP);
+  const handleHoldRateChange: React.ChangeEventHandler<HTMLInputElement> = (e) => {
+    setHoldRateDraft(e.currentTarget.value);
+  };
+  const handleHoldRateBlur: React.FocusEventHandler<HTMLInputElement> = (e) => {
+    commitHoldRate(e.currentTarget.value);
+  };
+  const onHoldRateKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+    if (e.key === 'ArrowUp') { e.preventDefault(); incHoldRate(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); decHoldRate(); }
+    else if (e.key === 'Enter') { e.preventDefault(); commitHoldRate(e.currentTarget.value); }
+    else if (e.key === 'Escape') { e.preventDefault(); setHoldRateDraft(holdRate.toFixed(1)); }
+  };
+
   // ---- Card Scheduling (display ordering) ----
   const [schedPrefs, setSchedPrefs] = useState<CardSchedulingPrefs>(() => getSchedulingPrefs());
   const saveSchedPrefs = (patch: Partial<CardSchedulingPrefs>) => {
@@ -274,18 +315,41 @@ export default function SettingsPage() {
               </select>
             </div>
 
-            {/* Keybinds */}
-            <div className="row" title="Customize keyboard shortcuts for navigation and review" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
-              <div>Keybinds</div>
-              <div className="sub">Configure app shortcuts</div>
-              <button
-                className="button"
-                onClick={async () => { await maybeSaveCardgenConfig(); navigate('/settings/keybinds', { state: { from: location } }); }}
-                style={{ justifySelf: 'end' }}
-              >
-                Manage
-              </button>
+          {/* Hold-to-step speed */}
+          <div className="row" title="Adjust how quickly moves advance when holding arrow keys" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
+            <div>Hold Step Speed</div>
+            <div className="sub">Steps/sec when holding navigation keys (0 disables hold)</div>
+            <div className="num-wrap" style={{ justifySelf: 'end' }}>
+              <input
+                className="no-native-spin"
+                type="text"
+                inputMode="decimal"
+                value={holdRateDraft}
+                onChange={handleHoldRateChange}
+                onBlur={handleHoldRateBlur}
+                onKeyDown={onHoldRateKeyDown}
+                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', width: 80, textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
+                title="Enter 0 to 20 steps per second"
+              />
+              <div className="num-stepper" aria-hidden="false">
+                <button type="button" className="step up" onClick={incHoldRate} title="Increase by 0.1" aria-label="Increase">▲</button>
+                <button type="button" className="step down" onClick={decHoldRate} title="Decrease by 0.1" aria-label="Decrease">▼</button>
+              </div>
             </div>
+          </div>
+
+          {/* Keybinds */}
+          <div className="row" title="Customize keyboard shortcuts for navigation and review" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
+            <div>Keybinds</div>
+            <div className="sub">Configure app shortcuts</div>
+            <button
+              className="button"
+              onClick={async () => { await maybeSaveCardgenConfig(); navigate('/settings/keybinds', { state: { from: location } }); }}
+              style={{ justifySelf: 'end' }}
+            >
+              Manage
+            </button>
+          </div>
           </div>
 
         {/* Card Creation */}

@@ -5,6 +5,7 @@ type Theme = 'dark' | 'light';
 export type Settings = {
   theme: Theme;
   frontStartAtReview: boolean;
+  boardHoldStepsPerSecond: number;
 
   // Card creation settings
   otherAnswersAcceptance: number; // pawns
@@ -20,6 +21,7 @@ export type Settings = {
 const DEFAULTS: Settings = {
   theme: 'dark',
   frontStartAtReview: false,
+  boardHoldStepsPerSecond: 2.7,
 
   otherAnswersAcceptance: 0.20,
   maxOtherAnswerCount: 4,
@@ -32,12 +34,32 @@ const DEFAULTS: Settings = {
 
 const KEY = 'chessflashcards.settings.v1';
 
+type LegacySettings = Partial<Settings> & {
+  boardHoldSpeed?: number;
+};
+
 function load(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return DEFAULTS;
-    const parsed = JSON.parse(raw);
-    return { ...DEFAULTS, ...parsed };
+    const parsed = JSON.parse(raw) as LegacySettings;
+    const merged: Settings = { ...DEFAULTS, ...parsed } as Settings;
+
+    if (typeof parsed.boardHoldStepsPerSecond !== 'number') {
+      if (typeof parsed.boardHoldSpeed === 'number') {
+        const level = Math.min(10, Math.max(0, parsed.boardHoldSpeed));
+        const converted = level <= 0 ? 0 : Math.round((0.5 * Math.pow(1.4, level - 1)) * 10) / 10;
+        merged.boardHoldStepsPerSecond = converted;
+      } else {
+        merged.boardHoldStepsPerSecond = DEFAULTS.boardHoldStepsPerSecond;
+      }
+    } else {
+      const rate = parsed.boardHoldStepsPerSecond;
+      const clamped = Math.max(0, Math.min(20, Math.round(rate * 10) / 10));
+      merged.boardHoldStepsPerSecond = clamped;
+    }
+
+    return merged;
   } catch {
     return DEFAULTS;
   }
