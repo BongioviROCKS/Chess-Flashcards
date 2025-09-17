@@ -9,6 +9,8 @@ type BoardProps = {
   orientation?: Orientation;
   /** highlight the last move's from/to squares (algebraic, e.g. "e2","e4") */
   highlight?: { from?: string; to?: string } | null;
+  /** show algebraic coordinate guides on the board */
+  showCoordinates?: boolean;
 };
 
 /** fallback to start if FEN is bad */
@@ -61,6 +63,7 @@ export default function Board({
   size = 360,
   orientation = 'white',
   highlight = null,
+  showCoordinates = false,
 }: BoardProps) {
   const sFen = useMemo(() => safeFen(fen), [fen]);
 
@@ -93,6 +96,42 @@ export default function Board({
     }
     return out;
   }, [highlight, orientation]);
+
+  const coordTextStyle = useMemo<React.CSSProperties>(() => ({
+    fill: 'rgba(255, 255, 255, 0.95)',
+    stroke: 'rgba(0, 0, 0, 0.8)',
+    strokeWidth: 0.04,
+    paintOrder: 'stroke fill',
+    fontWeight: 600,
+    pointerEvents: 'none',
+    userSelect: 'none',
+  }), []);
+
+  const fileLabels = useMemo(() => {
+    if (!showCoordinates) return [];
+    const bottomRank = orientation === 'white' ? 0 : 7;
+    return Array.from({ length: 8 }, (_, file) => {
+      const { x, y } = fileRankToXY(file, bottomRank, orientation);
+      return {
+        label: String.fromCharCode(65 + file),
+        x,
+        y,
+      };
+    });
+  }, [orientation, showCoordinates]);
+
+  const rankLabels = useMemo(() => {
+    if (!showCoordinates) return [];
+    const firstFile = orientation === 'white' ? 0 : 7;
+    return Array.from({ length: 8 }, (_, rank) => {
+      const { x, y } = fileRankToXY(firstFile, rank, orientation);
+      return {
+        label: String(rank + 1),
+        x,
+        y,
+      };
+    });
+  }, [orientation, showCoordinates]);
 
   return (
     <svg
@@ -166,6 +205,39 @@ export default function Board({
         }
         return nodes;
       })()}
+
+      {showCoordinates && (
+        <>
+          {fileLabels.map(({ label, x, y }) => (
+            <text
+              key={`file-${label}`}
+              x={x + 0.94}
+              y={y + 0.94}
+              fontSize={0.28}
+              textAnchor="end"
+              dominantBaseline="ideographic"
+              aria-hidden="true"
+              style={coordTextStyle}
+            >
+              {label}
+            </text>
+          ))}
+          {rankLabels.map(({ label, x, y }) => (
+            <text
+              key={`rank-${label}`}
+              x={x + 0.06}
+              y={y + 0.18}
+              fontSize={0.28}
+              textAnchor="start"
+              dominantBaseline="hanging"
+              aria-hidden="true"
+              style={coordTextStyle}
+            >
+              {label}
+            </text>
+          ))}
+        </>
+      )}
     </svg>
   );
 }

@@ -187,6 +187,7 @@ export default function BoardPlayer(props: BoardPlayerProps & WithFlip) {
   return (
     <div className="bp-wrap">
       <Board
+        showCoordinates
         fen={frames[idx]}
         size={size}
         orientation={orientation}

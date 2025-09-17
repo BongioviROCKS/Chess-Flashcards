@@ -1,4 +1,3 @@
-put A-H and 1-8 on board squares
 Add setting to adjust speed of holding right to step through moves in review
 On Forced answer page, fix Remove display and drop down display
 Remove description column from settings page (because hover hints exist)
