@@ -1,3 +1,4 @@
+test
 stockfish assisted manual add using PGN does not work (test FEN too)
 add ability to navigate board to set moves to create card
 if best move is a point better than the next, assume it to be better (togglable)
