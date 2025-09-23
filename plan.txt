@@ -1,4 +1,7 @@
-Add setting to adjust speed of holding right to step through moves in review
+stockfish assisted manual add using PGN does not work (test FEN too)
+add ability to navigate board to set moves to create card
+if best move is a point better than the next, assume it to be better (togglable)
+assign cards to opening decks correctly on creation
 On Forced answer page, fix Remove display and drop down display
 Remove description column from settings page (because hover hints exist)
 add feature to import cards.json file from user (already added?)
@@ -47,7 +50,7 @@ Add daily opening game challenge
     Also track time to solve and add as a 4th dimension of rating (speed rating)
     add as a discord game/activity
 
-convert application to run on an iphone/android
+convert windows .exe application to run on an iphone/android, mac, linux, and website
     implement cloud sync across devices
     add notifications for reviews or challenges
 

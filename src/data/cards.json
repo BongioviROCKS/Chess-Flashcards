@@ -32,7 +32,7 @@
         "enginePath": "engines/win-x64/stockfish17.1.exe"
       }
     },
-    "due": "2025-09-20T00:33:04.722Z"
+    "due": "2025-09-17T22:59:02.986Z"
   },
   {
     "id": "c_1757312041528_0gkf",
@@ -59,6 +59,168 @@
         "forced": null,
         "enginePath": "engines/win-x64/stockfish17.1.exe"
       }
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1758334042371_3wjn",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 c5 c3 Nc6 d4 cxd4 cxd4 d5 exd5 Qxd5 Nf3 Bg4 Nc3 Qd8 d5 Ne5 Nxe5 Bxd1 Bb5+ Qd7 Bxd7+ Kd8 Bf5 Bh5",
+      "fen": "r2k1bnr/pp2pppp/8/3PNB1b/8/2N5/PP3PPP/R1B1K2R w KQ - 3 13",
+      "answer": "g4",
+      "answerFen": "r2k1bnr/pp2pppp/8/3PNB1b/6P1/2N5/PP3P1P/R1B1K2R b KQ - 0 13",
+      "eval": {"kind": "cp", "value": 728, "depth": 36},
+      "exampleLine": ["g4", "f6", "Nd7", "Bg6", "Nxf8", "Bxf5", "gxf5", "g5", "fxg6", "hxg6", "Nxg6", "Rh3", "Nf4", "Rh4", "Ne6+", "Kd7", "Nc5+", "Kd6", "Nxb7+", "Kc7", "Nc5", "Rc8", "Be3", "Nh6", "Ke2", "Kb8", "N3e4", "Ng4", "Rac1", "Nxe3", "Kxe3", "Rd8", "Nc3", "Rh3+", "f3"],
+      "otherAnswers": [
+        {"move": "O-O", "eval": {"kind": "cp", "value": 611, "depth": 36}}
+      ],
+      "depth": 13,
+      "creationCriteria": {
+        "createdAt": "2025-09-20T02:07:22.371Z",
+        "input": {"movesSAN": ["e4", "c5", "c3", "Nc6", "d4", "cxd4", "cxd4", "d5", "exd5", "Qxd5", "Nf3", "Bg4", "Nc3", "Qd8", "d5", "Ne5", "Nxe5", "Bxd1", "Bb5+", "Qd7", "Bxd7+", "Kd8", "Bf5", "Bh5"], "pgn": "", "fen": "r2k1bnr/pp2pppp/8/3PNB1b/8/2N5/PP3PPP/R1B1K2R w KQ - 3 13"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 16, "hash": 32768, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 1951567,
+        "engineBest": {"move": "g4", "eval": {"kind": "cp", "value": 728, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/win-x64/stockfish17.1.exe"
+      },
+      "children": [
+        "c_1758340618715_uggo"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1758340618715_uggo",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 c5 c3 Nc6 d4 cxd4 cxd4 d5 exd5 Qxd5 Nf3 Bg4 Nc3 Qd8 d5 Ne5 Nxe5 Bxd1 Bb5+ Qd7 Bxd7+ Kd8 Bf5 Bh5 g4 Bg6",
+      "fen": "r2k1bnr/pp2pppp/6b1/3PNB2/6P1/2N5/PP3P1P/R1B1K2R w KQ - 1 14",
+      "answer": "Bxg6",
+      "answerFen": "r2k1bnr/pp2pppp/6B1/3PN3/6P1/2N5/PP3P1P/R1B1K2R b KQ - 0 14",
+      "eval": {"kind": "cp", "value": 786, "depth": 36},
+      "exampleLine": ["Bxg6", "fxg6", "Nf7+", "Ke8", "Nxh8", "Rd8", "Bg5", "Nf6", "f3", "Nxd5", "O-O-O", "Nb4", "Kb1", "Nd3", "Nb5", "Rd7", "Nc7+", "Rxc7", "Rxd3", "Rc8", "Re1", "Rc6", "h4", "b6", "Ra3", "a5", "Rd3", "a4", "a3", "h6", "Bxe7", "Bxe7", "Rde3", "Rc7", "Nxg6", "Rd7", "Rxe7+", "Kd8", "Rxd7+", "Kxd7", "Ne5+", "Kc7", "f4", "Kc8", "f5"],
+      "otherAnswers": [
+        {"move": "Nb5", "eval": {"kind": "cp", "value": 730, "depth": 36}}
+      ],
+      "depth": 14,
+      "creationCriteria": {
+        "createdAt": "2025-09-20T03:56:58.714Z",
+        "input": {"movesSAN": ["e4", "c5", "c3", "Nc6", "d4", "cxd4", "cxd4", "d5", "exd5", "Qxd5", "Nf3", "Bg4", "Nc3", "Qd8", "d5", "Ne5", "Nxe5", "Bxd1", "Bb5+", "Qd7", "Bxd7+", "Kd8", "Bf5", "Bh5", "g4", "Bg6"], "pgn": "", "fen": "r2k1bnr/pp2pppp/6b1/3PNB2/6P1/2N5/PP3P1P/R1B1K2R w KQ - 1 14"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 16, "hash": 32768, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 1218807,
+        "engineBest": {"move": "Bxg6", "eval": {"kind": "cp", "value": 786, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/win-x64/stockfish17.1.exe"
+      },
+      "parent": "c_1758334042371_3wjn",
+      "children": [
+        "c_1758346883117_zrzi"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1758346883117_zrzi",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 c5 c3 Nc6 d4 cxd4 cxd4 d5 exd5 Qxd5 Nf3 Bg4 Nc3 Qd8 d5 Ne5 Nxe5 Bxd1 Bb5+ Qd7 Bxd7+ Kd8 Bf5 Bh5 g4 Bg6 Bxg6 hxg6",
+      "fen": "r2k1bnr/pp2ppp1/6p1/3PN3/6P1/2N5/PP3P1P/R1B1K2R w KQ - 0 15",
+      "answer": "Nxf7+",
+      "answerFen": "r2k1bnr/pp2pNp1/6p1/3P4/6P1/2N5/PP3P1P/R1B1K2R b KQ - 0 15",
+      "eval": {"kind": "cp", "value": 833, "depth": 36},
+      "exampleLine": ["Nxf7+", "Kd7", "Nxh8", "Re8", "Nxg6", "e6", "Nxf8+", "Rxf8", "Be3", "Nf6", "Rg1", "b5", "dxe6+", "Kxe6", "Rd1", "b4", "Ne2", "Nd5", "Rg3", "a5", "Rf3", "Rxf3", "Nd4+", "Kd6", "Nxf3", "a4", "Rxd5+", "Kxd5", "Ke2", "Kd6", "b3", "axb3", "axb3", "Kc6", "Ne5+", "Kc7"],
+      "otherAnswers": [
+        {"move": "O-O", "eval": {"kind": "cp", "value": 697, "depth": 36}}
+      ],
+      "depth": 15,
+      "creationCriteria": {
+        "createdAt": "2025-09-20T05:41:23.117Z",
+        "input": {"movesSAN": ["e4", "c5", "c3", "Nc6", "d4", "cxd4", "cxd4", "d5", "exd5", "Qxd5", "Nf3", "Bg4", "Nc3", "Qd8", "d5", "Ne5", "Nxe5", "Bxd1", "Bb5+", "Qd7", "Bxd7+", "Kd8", "Bf5", "Bh5", "g4", "Bg6", "Bxg6", "hxg6"], "pgn": "", "fen": "r2k1bnr/pp2ppp1/6p1/3PN3/6P1/2N5/PP3P1P/R1B1K2R w KQ - 0 15"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 16, "hash": 32768, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 985859,
+        "engineBest": {"move": "Nxf7+", "eval": {"kind": "cp", "value": 833, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/win-x64/stockfish17.1.exe"
+      },
+      "parent": "c_1758340618715_uggo",
+      "children": [
+        "c_1758351881977_cvys"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1758351881977_cvys",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 c5 c3 Nc6 d4 cxd4 cxd4 d5 exd5 Qxd5 Nf3 Bg4 Nc3 Qd8 d5 Ne5 Nxe5 Bxd1 Bb5+ Qd7 Bxd7+ Kd8 Bf5 Bh5 g4 Bg6 Bxg6 hxg6 Nxf7+ Kd7",
+      "fen": "r4bnr/pp1kpNp1/6p1/3P4/6P1/2N5/PP3P1P/R1B1K2R w KQ - 1 16",
+      "answer": "Nxh8",
+      "answerFen": "r4bnN/pp1kp1p1/6p1/3P4/6P1/2N5/PP3P1P/R1B1K2R b KQ - 0 16",
+      "eval": {"kind": "cp", "value": 859, "depth": 36},
+      "exampleLine": ["Nxh8", "Rc8", "Nxg6", "e6", "Nxf8+", "Rxf8", "Be3", "Nf6", "Rg1", "Nxd5", "Rd1", "Kd6", "Ke2", "Ke5", "Nxd5", "exd5", "Rd2", "Ke6", "Rgd1", "Rd8", "Rd3", "Rd6", "a3", "Rd8", "h4", "Rd6", "Rc1", "Ra6", "h5", "Ra4", "Bd4", "Rc4", "Re3+", "Kd7", "Rxc4", "dxc4", "b4", "cxb3", "Kd3"],
+      "otherAnswers": [
+        {"move": "Bg5", "eval": {"kind": "cp", "value": 840, "depth": 36}},
+        {"move": "O-O", "eval": {"kind": "cp", "value": 837, "depth": 36}},
+        {"move": "Nb5", "eval": {"kind": "cp", "value": 810, "depth": 36}}
+      ],
+      "depth": 16,
+      "creationCriteria": {
+        "createdAt": "2025-09-20T07:04:41.977Z",
+        "input": {"movesSAN": ["e4", "c5", "c3", "Nc6", "d4", "cxd4", "cxd4", "d5", "exd5", "Qxd5", "Nf3", "Bg4", "Nc3", "Qd8", "d5", "Ne5", "Nxe5", "Bxd1", "Bb5+", "Qd7", "Bxd7+", "Kd8", "Bf5", "Bh5", "g4", "Bg6", "Bxg6", "hxg6", "Nxf7+", "Kd7"], "pgn": "", "fen": "r4bnr/pp1kpNp1/6p1/3P4/6P1/2N5/PP3P1P/R1B1K2R w KQ - 1 16"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 16, "hash": 32768, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 1466736,
+        "engineBest": {"move": "Nxh8", "eval": {"kind": "cp", "value": 859, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/win-x64/stockfish17.1.exe"
+      },
+      "parent": "c_1758346883117_zrzi",
+      "children": [
+        "c_1758353702876_4w3h"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1758353702876_4w3h",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 c5 c3 Nc6 d4 cxd4 cxd4 d5 exd5 Qxd5 Nf3 Bg4 Nc3 Qd8 d5 Ne5 Nxe5 Bxd1 Bb5+ Qd7 Bxd7+ Kd8 Bf5 Bh5 g4 Bg6 Bxg6 hxg6 Nxf7+ Kd7 Nxh8 Nf6",
+      "fen": "r4b1N/pp1kp1p1/5np1/3P4/6P1/2N5/PP3P1P/R1B1K2R w KQ - 1 17",
+      "answer": "g5",
+      "answerFen": "r4b1N/pp1kp1p1/5np1/3P2P1/8/2N5/PP3P1P/R1B1K2R b KQ - 0 17",
+      "eval": {"kind": "cp", "value": 881, "depth": 36},
+      "exampleLine": ["g5", "b5", "gxf6", "exf6", "Nxg6", "Bd6", "Nxb5", "Bc5", "Nc3", "Re8+", "Be3", "Bxe3", "fxe3", "Rxe3+", "Ne2", "Kd6", "Rd1", "Re4", "a3", "Re8", "Rg1", "Rb8", "Rg3", "Rxb2", "Nh4", "Rb8", "Rxg7", "f5", "Rg6+", "Ke7", "Nxf5+", "Kf7", "Rg3", "Rb3", "Ne3"],
+      "otherAnswers": [
+        {"move": "Ke2", "eval": {"kind": "cp", "value": 874, "depth": 36}},
+        {"move": "Bg5", "eval": {"kind": "cp", "value": 853, "depth": 36}},
+        {"move": "Bf4", "eval": {"kind": "cp", "value": 853, "depth": 36}},
+        {"move": "Bd2", "eval": {"kind": "cp", "value": 847, "depth": 36}},
+        {"move": "Be3", "eval": {"kind": "cp", "value": 844, "depth": 36}},
+        {"move": "h3", "eval": {"kind": "cp", "value": 843, "depth": 36}},
+        {"move": "Nxg6", "eval": {"kind": "cp", "value": 841, "depth": 36}},
+        {"move": "f3", "eval": {"kind": "cp", "value": 834, "depth": 36}},
+        {"move": "Rg1", "eval": {"kind": "cp", "value": 834, "depth": 36}},
+        {"move": "Nf7", "eval": {"kind": "cp", "value": 831, "depth": 36}}
+      ],
+      "depth": 17,
+      "creationCriteria": {
+        "createdAt": "2025-09-20T07:35:02.875Z",
+        "input": {"movesSAN": ["e4", "c5", "c3", "Nc6", "d4", "cxd4", "cxd4", "d5", "exd5", "Qxd5", "Nf3", "Bg4", "Nc3", "Qd8", "d5", "Ne5", "Nxe5", "Bxd1", "Bb5+", "Qd7", "Bxd7+", "Kd8", "Bf5", "Bh5", "g4", "Bg6", "Bxg6", "hxg6", "Nxf7+", "Kd7", "Nxh8", "Nf6"], "pgn": "", "fen": "r4b1N/pp1kp1p1/5np1/3P4/6P1/2N5/PP3P1P/R1B1K2R w KQ - 1 17"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 16, "hash": 32768, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 748283,
+        "engineBest": {"move": "g5", "eval": {"kind": "cp", "value": 881, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/win-x64/stockfish17.1.exe"
+      },
+      "parent": "c_1758351881977_cvys"
     },
     "due": "new"
   }

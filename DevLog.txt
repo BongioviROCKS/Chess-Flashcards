@@ -93,4 +93,4 @@
     1 hour:
         Fix weird characters on settings page again
         put A-H and 1-8 on board squares
-        
+        Add setting to adjust speed of holding right to step through moves in review
