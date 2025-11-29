@@ -1,12 +1,14 @@
-test
-stockfish assisted manual add using PGN does not work (test FEN too)
+add feature to import cards.json file from user
+add ability to duplicate a card in collection view
+add ability for user to actually make the move on the board on review
+    should more easily store wrong answers for recommended improvements to memorization
 add ability to navigate board to set moves to create card
-if best move is a point better than the next, assume it to be better (togglable)
+create a "practice mode" for the users to manually navigate lines (using combination of master database and active stockfish)
+if best move is a point better than the next after 20 depth, assume it to be better and stop thinking (togglable)
 assign cards to opening decks correctly on creation
+stockfish assisted manual add using PGN does not work (test FEN too)
 On Forced answer page, fix Remove display and drop down display
 Remove description column from settings page (because hover hints exist)
-add feature to import cards.json file from user (already added?)
-add ability to duplicate a card in collection view
 add a field to track sibling answers; sibling card should minimize differences
     Field should probably not be a "field"? Should just be a lineage tracker that knows the IDs of other cards
         if it is to stay a field, update the field name, and update background text of Sibling answers field in collection preview (and edit page) to be the ID of sibling cards
