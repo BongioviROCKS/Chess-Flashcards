@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { allCards } from '../data/cardStore';
+import { allCards, replaceCards } from '../data/cardStore';
 import type { Card } from '../data/types';
 import BoardPlayer from '../components/BoardPlayer';
 import { Deck, getChildrenOf, getDeckById, getRootDecks, getDeckPath } from '../decks';
@@ -437,6 +437,30 @@ export default function CollectionPage() {
   }, []);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [importMenuOpen, setImportMenuOpen] = useState(false);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importStatus, setImportStatus] = useState<string | null>(null);
+  const [importErr, setImportErr] = useState<string | null>(null);
+  const importMenuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!importMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (!importMenuRef.current) return;
+      const target = e.target as Node | null;
+      if (target && importMenuRef.current.contains(target)) return;
+      setImportMenuOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setImportMenuOpen(false);
+    };
+    window.addEventListener('mousedown', handleClick);
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      window.removeEventListener('mousedown', handleClick);
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [importMenuOpen]);
+
   const selected = useMemo(() => (selectedId ? all.find(c => c.id === selectedId) || null : null), [all, selectedId]);
 
   // --- Draft + save ---
@@ -456,6 +480,53 @@ export default function CollectionPage() {
     } catch (e: any) { setErr(e?.message || 'Failed to save'); } finally { setSaving(false); }
   }
 
+  const handleImport = useCallback(async (mode: 'add' | 'overwrite') => {
+    setImportMenuOpen(false);
+    if (importBusy) return;
+    const bridge = (window as any).cards;
+    if (!bridge?.importFromFile) {
+      setImportErr('Import is not available in this build.');
+      return;
+    }
+    setImportStatus(null);
+    setImportErr(null);
+    setImportBusy(true);
+    try {
+      const res = await bridge.importFromFile(mode);
+      if (!res) {
+        setImportErr('Import failed: no response.');
+        return;
+      }
+      if (res.cancelled) {
+        setImportStatus('Import cancelled.');
+        return;
+      }
+      if (!res.ok) {
+        setImportErr(res.message || 'Import failed.');
+        return;
+      }
+      const cards = Array.isArray(res.cards) ? (res.cards as Card[]) : null;
+      if (cards) {
+        replaceCards(cards);
+        setSelectedId(null);
+      }
+      const sourceName = res.source ? String(res.source).split(/[\\/]/).pop() : 'selected file';
+      const importedCount = res.imported ?? (cards ? cards.length : 0);
+      if (mode === 'overwrite') {
+        setImportStatus(`Overwrote collection with ${importedCount} cards from ${sourceName}.`);
+      } else {
+        const added = res.added ?? 0;
+        const replaced = res.replaced ?? 0;
+        const updatedText = replaced ? `, ${replaced} updated` : '';
+        setImportStatus(`Imported ${importedCount} cards (${added} added${updatedText}) from ${sourceName}.`);
+      }
+    } catch (e: any) {
+      setImportErr(e?.message || 'Import failed.');
+    } finally {
+      setImportBusy(false);
+    }
+  }, [importBusy, setSelectedId]);
+
   const layoutHeight = 'calc(100vh - var(--app-header-offset, 64px) - 120px)';
 
   return (
@@ -467,9 +538,44 @@ export default function CollectionPage() {
             <div className="sub" style={{ marginTop: 2 }}>{filtered.length} / {all.length} cards</div>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div ref={importMenuRef} style={{ position: 'relative' }}>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => setImportMenuOpen(prev => !prev)}
+                disabled={importBusy}
+              >
+                {importBusy ? 'Importing...' : 'Import cards'}
+              </button>
+              {importMenuOpen && (
+                <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--panel)', border: '1px solid var(--border-strong)', borderRadius: 8, minWidth: 220, boxShadow: '0 6px 16px rgba(0,0,0,0.25)', padding: 6, zIndex: 5 }}>
+                  <button
+                    type="button"
+                    onClick={() => handleImport('add')}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer' }}
+                  >
+                    <div style={{ fontWeight: 600 }}>Add to collection</div>
+                    <div className="sub" style={{ marginTop: 2 }}>Merge cards with the existing list</div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleImport('overwrite')}
+                    style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer' }}
+                  >
+                    <div style={{ fontWeight: 600 }}>Overwrite collection</div>
+                    <div className="sub" style={{ marginTop: 2 }}>Replace everything with the imported file</div>
+                  </button>
+                </div>
+              )}
+            </div>
             <button className="button secondary" onClick={() => navigate(-1)} title={`Back${backKeys ? ` (${backKeys})` : ''}`}>Back</button>
           </div>
         </div>
+        {(importStatus || importErr) && (
+          <div className="sub" style={{ color: importErr ? '#b3261e' : '#5f6368', textAlign: 'right' }}>
+            {importErr || importStatus}
+          </div>
+        )}
 
         <div
           ref={shellRef}

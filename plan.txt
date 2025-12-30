@@ -1,4 +1,3 @@
-add feature to import cards.json file from user
 add ability to duplicate a card in collection view
 add ability for user to actually make the move on the board on review
     should more easily store wrong answers for recommended improvements to memorization

@@ -1,5 +1,5 @@
 // electron/main.js  (ESM)
-import { app, BrowserWindow, ipcMain, Menu, shell } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, Menu, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -120,6 +120,22 @@ function loadCardsArray() {
     return [];
   }
 }
+
+function parseCardsJsonText(raw, label = 'cards.json') {
+  const text = String(raw || '').trim();
+  if (!text) return [];
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    const msg = err && err.message ? err.message : String(err);
+    throw new Error(`Failed to parse ${label}: ${msg}`);
+  }
+  if (Array.isArray(parsed)) return parsed;
+  if (parsed && typeof parsed === 'object' && Array.isArray(parsed.cards)) return parsed.cards;
+  throw new Error('cards.json must be a JSON array or an object with a "cards" array.');
+}
+
 // Custom JSON formatter for cards.json
 function inlineJsonObject(obj) {
   const raw = JSON.stringify(obj);
@@ -788,6 +804,53 @@ function registerIpc() {
     }
   });
 
+
+  ipcMain.handle('cards:importFromFile', async (_evt, payload) => {
+    const mode = payload?.mode === 'overwrite' ? 'overwrite' : 'add';
+    try {
+      const browserWindow = BrowserWindow.getFocusedWindow();
+      const { canceled, filePaths } = await dialog.showOpenDialog(browserWindow ?? undefined, {
+        title: 'Import cards.json',
+        properties: ['openFile'],
+        filters: [{ name: 'JSON', extensions: ['json'] }],
+        defaultPath: CARDS_PATH,
+      });
+      if (canceled || !filePaths?.length) {
+        return { ok: false, cancelled: true };
+      }
+      const filePath = filePaths[0];
+      const incomingRaw = parseCardsJsonText(fs.readFileSync(filePath, 'utf-8'), filePath);
+      const incoming = incomingRaw.filter(card => card && typeof card === 'object');
+      const skipped = incomingRaw.length - incoming.length;
+      if (mode === 'overwrite') {
+        saveCardsArray(incoming);
+        return { ok: true, mode, source: filePath, total: incoming.length, added: incoming.length, replaced: 0, imported: incoming.length, skipped, cards: incoming };
+      }
+      const current = loadCardsArray();
+      const next = [...current];
+      const idxById = new Map(current.map((c, idx) => [c?.id, idx]));
+      let replaced = 0;
+      let added = 0;
+      for (const card of incoming) {
+        const id = (card && typeof card.id === 'string') ? card.id : undefined;
+        if (id && idxById.has(id)) {
+          const idx = idxById.get(id);
+          next[idx] = card;
+          replaced++;
+        } else {
+          next.push(card);
+          if (id) idxById.set(id, next.length - 1);
+          added++;
+        }
+      }
+      saveCardsArray(next);
+      return { ok: true, mode, source: filePath, total: next.length, added, replaced, imported: incoming.length, skipped, cards: next };
+    } catch (e) {
+      console.error('[cards:importFromFile] failed:', e);
+      return { ok: false, message: e?.message || 'Import failed' };
+    }
+  });
+
   // Update only the 'due' field of a card by id
   ipcMain.handle('cards:setDue', async (_evt, payload) => {
     try {
@@ -809,7 +872,7 @@ function registerIpc() {
     }
   });
 
-  console.log('[main] IPC handlers registered: cardgen:save-config, cardgen:make-card, autogen:scan-chesscom, cards:readOne, cards:update, cards:create, cards:setDue, cards:exportToDownloads, cards:exportJsonToDownloads, decks:getLimits, decks:setLimits');
+  console.log('[main] IPC handlers registered: cardgen:save-config, cardgen:make-card, autogen:scan-chesscom, cards:readOne, cards:update, cards:create, cards:setDue, cards:exportToDownloads, cards:exportJsonToDownloads, cards:importFromFile, decks:getLimits, decks:setLimits');
 }
 
 app.whenReady().then(() => {

@@ -36,6 +36,7 @@ try {
     setDue:  (id, due) => ipcRenderer.invoke('cards:setDue', { id, due }),
     exportToDownloads: () => ipcRenderer.invoke('cards:exportToDownloads'),
     exportJsonToDownloads: (cards, name) => ipcRenderer.invoke('cards:exportJsonToDownloads', { cards, name }),
+    importFromFile: (mode) => ipcRenderer.invoke('cards:importFromFile', { mode }),
   });
 
   // Forced Answers (override map of FEN -> SAN)

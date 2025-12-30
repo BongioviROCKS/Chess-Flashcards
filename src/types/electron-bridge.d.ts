@@ -46,6 +46,7 @@ declare global {
       setDue?: (id: string, due: string | 'new' | undefined) => Promise<boolean>;
       exportToDownloads?: () => Promise<{ ok: boolean; path?: string; message?: string }>;
       exportJsonToDownloads?: (cards: any[], name?: string) => Promise<{ ok: boolean; path?: string; message?: string }>;
+      importFromFile?: (mode: 'add' | 'overwrite') => Promise<{ ok: boolean; cards?: any[]; message?: string; added?: number; replaced?: number; total?: number; imported?: number; skipped?: number; source?: string; cancelled?: boolean }>;
     };
 
     decks?: {
