@@ -1,5 +1,7 @@
 add status pop up on auto add
 add feature to just think (don't add) on manual stockfish assisted add
+    also add better error details on Ivalid PGN on manual stockfish assisted add
+    add eval to final terminal output
 add feature to think (just for the sake of card completion) on full manual add
 add ability to duplicate a card in collection view
 add ability for user to actually make the move on the board on review

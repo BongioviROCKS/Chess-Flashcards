@@ -223,5 +223,37 @@
       "parent": "c_1758351881977_cvys"
     },
     "due": "new"
+  },
+  {
+    "id": "c_1767693686306_267l",
+    "deck": "black-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 f4 exf4 Nf3 g5 Bc4 g4 O-O gxf3 Qxf3 Qf6 e5 Qxe5 d3 Bh6 Bxf4 Bxf4 Qxf4 Qxf4 Rxf4",
+      "fen": "rnb1k1nr/pppp1p1p/8/8/2B2R2/3P4/PPP3PP/RN4K1 b kq - 0 11",
+      "answer": "f5",
+      "answerFen": "rnb1k1nr/pppp3p/8/5p2/2B2R2/3P4/PPP3PP/RN4K1 w kq - 0 12",
+      "eval": {"kind": "cp", "value": 275, "depth": 36},
+      "exampleLine": ["f5", "Rxf5", "Ne7", "Bf7+", "Kd8", "Rf4", "d6", "Nc3", "a5", "Raf1", "Nd7", "d4", "a4", "Ne4", "h6", "c4", "Ra5", "b4", "axb3", "axb3", "Ra3", "Rh4", "Nc6", "Nc3", "Rxb3", "Nd5", "Rf8", "Bh5", "Rxf1+", "Kxf1", "Nf8", "Rf4", "Ne6", "Rf6", "Ncxd4", "Rxh6", "Nf8", "Rh8", "Rb1+", "Kf2"],
+      "otherAnswers": [
+        {"move": "Ne7", "eval": {"kind": "cp", "value": 262, "depth": 36}},
+        {"move": "a5", "eval": {"kind": "cp", "value": 259, "depth": 36}},
+        {"move": "f6", "eval": {"kind": "cp", "value": 244, "depth": 36}},
+        {"move": "Nh6", "eval": {"kind": "cp", "value": 244, "depth": 36}},
+        {"move": "d6", "eval": {"kind": "cp", "value": 243, "depth": 36}},
+        {"move": "d5", "eval": {"kind": "cp", "value": 226, "depth": 36}}
+      ],
+      "depth": 11,
+      "creationCriteria": {
+        "createdAt": "2026-01-06T10:01:26.304Z",
+        "input": {"movesSAN": ["e4", "e5", "f4", "exf4", "Nf3", "g5", "Bc4", "g4", "O-O", "gxf3", "Qxf3", "Qf6", "e5", "Qxe5", "d3", "Bh6", "Bxf4", "Bxf4", "Qxf4", "Qxf4", "Rxf4"], "pgn": "", "fen": "rnb1k1nr/pppp1p1p/8/8/2B2R2/3P4/PPP3PP/RN4K1 b kq - 0 11"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 16, "hash": 32768, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 806011,
+        "engineBest": {"move": "f5", "eval": {"kind": "cp", "value": 275, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/win-x64/stockfish17.1.exe"
+      }
+    },
+    "due": "new"
   }
 ]
