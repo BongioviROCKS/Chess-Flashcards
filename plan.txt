@@ -1,4 +1,6 @@
 add status pop up on auto add
+add feature to just think (don't add) on manual stockfish assisted add
+add feature to think (just for the sake of card completion) on full manual add
 add ability to duplicate a card in collection view
 add ability for user to actually make the move on the board on review
     should more easily store wrong answers for recommended improvements to memorization
