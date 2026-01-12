@@ -1201,7 +1201,7 @@ export default function ManualAddPage() {
       {/* Duplicate overwrite prompt */}
       {dupPrompt && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, overflow: 'auto', padding: 16 }}
           role="dialog"
           aria-modal="true"
           aria-label="Overwrite existing card confirmation"
@@ -1231,43 +1231,57 @@ export default function ManualAddPage() {
               )}
             </div>
             <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center', position: 'relative' }}>
-              <button type="button" className="button secondary" onClick={() => setDupPrompt(null)} disabled={dupWorking}>Cancel</button>
-              <div ref={dupKeepMenuRef} style={{ position: 'relative' }}>
-                <button type="button" className="button secondary" onClick={() => setDupKeepMenuOpen(prev => !prev)} disabled={dupWorking}>
-                  <span>Keep Both</span>
-                  <span style={{ fontSize: 12, opacity: 0.8 }}>▾</span>
-                </button>
-                {dupKeepMenuOpen && (
-                  <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--panel)', border: '1px solid var(--border-strong)', borderRadius: 8, minWidth: 220, boxShadow: '0 6px 16px rgba(0,0,0,0.25)', padding: 6, zIndex: 5 }}>
-                    <button
-                      type="button"
-                      onClick={() => handleKeepBoth('existing')}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer' }}
-                      disabled={dupWorking}
-                    >
-                      <div style={{ fontWeight: 600 }}>Archive original</div>
-                      <div className="sub" style={{ marginTop: 2 }}>Keep both cards and archive the existing one</div>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => {
+                  setDupKeepMenuOpen(false);
+                  if (dupPrompt?.mode === 'stockfish' && dupWorking) cancelStockfish();
+                  else setDupPrompt(null);
+                }}
+              >
+                Cancel
+              </button>
+              {!dupWorking && (
+                <>
+                  <div ref={dupKeepMenuRef} style={{ position: 'relative' }}>
+                    <button type="button" className="button secondary" onClick={() => setDupKeepMenuOpen(prev => !prev)} disabled={dupWorking}>
+                      <span>Keep Both</span>
+                      <span style={{ fontSize: 12, opacity: 0.8 }}>▾</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleKeepBoth('new')}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer', marginTop: 6 }}
-                      disabled={dupWorking}
-                    >
-                      <div style={{ fontWeight: 600 }}>Archive new</div>
-                      <div className="sub" style={{ marginTop: 2 }}>Create the new card archived and keep the original active</div>
-                    </button>
+                    {dupKeepMenuOpen && (
+                      <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--panel)', border: '1px solid var(--border-strong)', borderRadius: 8, minWidth: 220, maxHeight: '40vh', overflowY: 'auto', boxShadow: '0 6px 16px rgba(0,0,0,0.25)', padding: 6, zIndex: 5 }}>
+                        <button
+                          type="button"
+                          onClick={() => handleKeepBoth('existing')}
+                          style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer' }}
+                          disabled={dupWorking}
+                        >
+                          <div style={{ fontWeight: 600 }}>Archive original</div>
+                          <div className="sub" style={{ marginTop: 2 }}>Keep both cards and archive the existing one</div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleKeepBoth('new')}
+                          style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer', marginTop: 6 }}
+                          disabled={dupWorking}
+                        >
+                          <div style={{ fontWeight: 600 }}>Archive new</div>
+                          <div className="sub" style={{ marginTop: 2 }}>Create the new card archived and keep the original active</div>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
-              {dupPrompt.mode === 'stockfish' && dupWorking && (
-                <button type="button" className="button secondary" onClick={cancelStockfish}>
-                  Cancel Run
+                  <button type="button" className="button" onClick={confirmOverwrite} disabled={dupWorking}>
+                    Overwrite
+                  </button>
+                </>
+              )}
+              {dupWorking && (
+                <button type="button" className="button" disabled>
+                  Creating Card...
                 </button>
               )}
-              <button type="button" className="button" onClick={confirmOverwrite} disabled={dupWorking}>
-                {dupWorking ? 'Overwriting…' : 'Overwrite'}
-              </button>
             </div>
           </div>
         </div>

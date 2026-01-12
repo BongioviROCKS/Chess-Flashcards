@@ -7,11 +7,25 @@
   "author": "",
   "license": "MIT",
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && cross-env STOCKFISH_PATH=engines/win-x64/stockfish17.1.exe ELECTRON_START_URL=http://localhost:5173 electron .\"",
+    "postinstall": "cross-env STOCKFISH_ASSET_BASE_URL=https://github.com/BongioviROCKS/Chess-Flashcards/releases/download/stockfish-v17.1 node scripts/ensure-stockfish.cjs",
+    "predev": "cross-env STOCKFISH_ASSET_BASE_URL=https://github.com/BongioviROCKS/Chess-Flashcards/releases/download/stockfish-v17.1 node scripts/ensure-stockfish.cjs",
+    "prestart": "cross-env STOCKFISH_ASSET_BASE_URL=https://github.com/BongioviROCKS/Chess-Flashcards/releases/download/stockfish-v17.1 node scripts/ensure-stockfish.cjs",
+    "prebuild": "cross-env STOCKFISH_ASSET_BASE_URL=https://github.com/BongioviROCKS/Chess-Flashcards/releases/download/stockfish-v17.1 node scripts/ensure-stockfish.cjs",
+
+    "dev": "run-script-os",
+    "dev:win32": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && cross-env STOCKFISH_PATH=engines/stockfish.exe ELECTRON_START_URL=http://localhost:5173 electron .\"",
+    "dev:darwin": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && cross-env STOCKFISH_PATH=engines/stockfish ELECTRON_START_URL=http://localhost:5173 electron .\"",
+    "dev:linux": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && cross-env STOCKFISH_PATH=engines/stockfish ELECTRON_START_URL=http://localhost:5173 electron .\"",
+
     "web:dev": "vite",
     "build:renderer": "vite build",
     "build": "npm run build:renderer && npx electron-builder",
-    "start": "electron .",
+
+    "start": "run-script-os",
+    "start:win32": "cross-env STOCKFISH_PATH=engines/stockfish.exe electron .",
+    "start:darwin": "cross-env STOCKFISH_PATH=engines/stockfish electron .",
+    "start:linux": "cross-env STOCKFISH_PATH=engines/stockfish electron .",
+
     "icons:deps": "npm i -D sharp icon-gen",
     "icons:gen": "node scripts/make-icons.js",
     "icons:clean": "npm remove -D sharp icon-gen",
@@ -60,6 +74,7 @@
     "concurrently": "^9.0.0",
     "cross-env": "^7.0.3",
     "electron": "^31.0.0",
+    "run-script-os": "^1.1.6",
     "typescript": "^5.5.4",
     "vite": "^5.4.0",
     "wait-on": "^8.0.0"

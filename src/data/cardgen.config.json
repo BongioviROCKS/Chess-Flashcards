@@ -1,7 +1,7 @@
 {
   "otherAnswersAcceptance": 0.5,
-  "maxOtherAnswerCount": 10,
-  "depth": 35,
+  "maxOtherAnswerCount": 3,
+  "depth": 20,
   "threads": 16,
-  "hash": 32768
+  "hash": 16384
 }
