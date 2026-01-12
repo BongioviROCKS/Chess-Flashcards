@@ -11,6 +11,8 @@ const __dirname  = path.dirname(__filename);
 
 const isDev = !app.isPackaged;
 const ROOT = process.cwd();
+const DEV_SERVER_URL = process.env.ELECTRON_START_URL && String(process.env.ELECTRON_START_URL).trim();
+const DIST_INDEX_PATH = path.resolve(ROOT, 'dist', 'index.html');
 
 // Prefer preload.cjs; fall back to .mjs/.js if needed (for debugging)
 const PRELOAD_CJS = path.resolve(__dirname, 'preload.cjs');
@@ -48,7 +50,21 @@ function saveAnswerOverrides(obj) {
   }
 }
 
-function createWindow() {
+async function isUrlReachable(url, { timeoutMs = 2000 } = {}) {
+  if (!url) return false;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { method: 'GET', cache: 'no-store', signal: ctrl.signal });
+    return !!res?.ok;
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function createWindow() {
   console.log('[main] preload path:', PRELOAD, 'exists=', fs.existsSync(PRELOAD));
 
   // Resolve a platform-appropriate icon for the app window (title bar)
@@ -99,12 +115,27 @@ function createWindow() {
     icon: ICON,
   });
 
-  if (isDev) {
-    win.loadURL('http://localhost:5173/');
-    // win.webContents.openDevTools({ mode: 'detach' });
-  } else {
-    win.loadFile(path.join(__dirname, '../dist/index.html'));
+  const loadDist = async () => {
+    if (fs.existsSync(DIST_INDEX_PATH)) {
+      await win.loadFile(DIST_INDEX_PATH);
+    } else {
+      const msg = `[main] dist build not found at ${DIST_INDEX_PATH}. Run "npm run build:renderer" first.`;
+      console.error(msg);
+      win.loadURL(`data:text/plain,${encodeURIComponent(msg)}`);
+    }
+  };
+
+  // Prefer dev server only when explicitly provided; otherwise load the built assets.
+  if (DEV_SERVER_URL) {
+    const reachable = await isUrlReachable(DEV_SERVER_URL);
+    if (reachable) {
+      await win.loadURL(DEV_SERVER_URL);
+      return;
+    }
+    console.warn(`[main] dev server unreachable at ${DEV_SERVER_URL}; falling back to dist.`);
   }
+
+  await loadDist();
 }
 
 function loadCardsArray() {
@@ -933,10 +964,10 @@ app.whenReady().then(() => {
   } catch (e) {
     console.warn('[main] menu build failed:', e?.message || e);
   }
-  createWindow();
+  createWindow().catch((e) => console.error('[main] failed to create window:', e));
 
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    if (BrowserWindow.getAllWindows().length === 0) createWindow().catch((e) => console.error('[main] failed to recreate window:', e));
   });
 });
 
