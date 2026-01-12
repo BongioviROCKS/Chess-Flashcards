@@ -6,7 +6,6 @@ add status pop up on auto add
 add feature to analyze games before auto-add and get player preferences
 add feature to just think (don't add) on manual stockfish assisted add
     also add better error details on Ivalid PGN on manual stockfish assisted add
-    fix stockfish assisted PGN?
     add eval to final terminal output
 convert the current pasted moves/pgn/fen to the others on type change
 add feature to think (just for the sake of card completion) on full manual add
