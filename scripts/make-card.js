@@ -400,7 +400,8 @@ export async function createCard({
   fen = '',
   config = undefined,
   resolveEngine = {},
-  duplicateStrategy = 'skip'
+  duplicateStrategy = 'skip',
+  tags = undefined
 } = {}) {
   // Build SAN list
   let sans = [];
@@ -453,6 +454,8 @@ export async function createCard({
     } else if (mode === 'overwrite') {
       overwriteId = dupPath.id;
       console.log(`[make-card] duplicate detected (card ${dupPath.id}) -> overwrite in-place`);
+    } else if (mode === 'keep-both') {
+      console.log(`[make-card] duplicate detected (card ${dupPath.id}) -> keep both (create new card)`);
     } else {
       console.log(`[make-card] duplicate detected (card ${dupPath.id}) -> unsupported mode '${mode}', default to skip`);
       return { ok: true, skipped: true, deckId, existingId: dupPath.id };
@@ -639,9 +642,13 @@ export async function createCard({
     ...(parentId ? { parent: parentId } : {}),
   };
 
+  const cleanTags = Array.isArray(tags)
+    ? Array.from(new Set(tags.map(t => (typeof t === 'string' ? t.trim() : '')).filter(Boolean)))
+    : [];
+
   // New card (or overwrite existing)
   let id = overwriteId || `c_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-  const card = { id, deck: deckId, tags: [], fields, due: 'new' };
+  const card = { id, deck: deckId, tags: cleanTags, fields, due: 'new' };
 
   // Apply forced/anchor answer selection and transposition rules
   try {

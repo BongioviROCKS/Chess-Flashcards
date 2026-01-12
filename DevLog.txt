@@ -100,3 +100,9 @@
 12/31/25:
     1 hour:
         add ability to duplicate a card in collection view
+1/12/26:
+    1 hour:
+        In review, collection, and editor, add another navigation button with the arrows to skip to Review Position
+            circle icon on button
+            navigatable via space bar or enter
+        on overwrite? pop up on add card, add option to keep both

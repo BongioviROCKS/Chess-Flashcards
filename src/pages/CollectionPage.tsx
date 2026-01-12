@@ -599,7 +599,8 @@ export default function CollectionPage() {
                 onClick={() => setImportMenuOpen(prev => !prev)}
                 disabled={importBusy}
               >
-                {importBusy ? 'Importing...' : 'Import cards'}
+                <span>{importBusy ? 'Importing...' : 'Import cards'}</span>
+                <span style={{ fontSize: 12, opacity: 0.8 }}>▾</span>
               </button>
               {importMenuOpen && (
                 <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--panel)', border: '1px solid var(--border-strong)', borderRadius: 8, minWidth: 220, boxShadow: '0 6px 16px rgba(0,0,0,0.25)', padding: 6, zIndex: 5 }}>
@@ -845,6 +846,8 @@ export default function CollectionPage() {
                           frames={frames}
                           frameMoves={moves}
                           startIndex={reviewIndex}
+                          reviewIndex={reviewIndex}
+                          reviewFen={selected.fields.fen}
                           size={360}
                           orientation={isBlackDeckId(selected.deck) ? 'black' : 'white'}
                           showMoveLabel={true}

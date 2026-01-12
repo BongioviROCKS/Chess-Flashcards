@@ -11,10 +11,12 @@ declare global {
         hash: number;
       }) => Promise<boolean>;
       makeCard?: (args: {
+        movesSAN?: string[];
         moves?: string;
         pgn?: string;
         fen?: string;
-        duplicateStrategy?: 'skip' | 'overwrite' | 'prompt';
+        duplicateStrategy?: 'skip' | 'overwrite' | 'prompt' | 'keep-both';
+        tags?: string[];
         config?: {
           otherAnswersAcceptance: number;
           maxOtherAnswerCount: number;
@@ -22,7 +24,7 @@ declare global {
           threads: number;
           hash: number;
         };
-      }) => Promise<{ ok: boolean; message: string }>;
+      }) => Promise<{ ok: boolean; message: string; id?: string; deckId?: string; skipped?: boolean; existingId?: string }>;
       cancel?: () => void;
     };
 

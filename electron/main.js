@@ -483,7 +483,7 @@ function registerIpc() {
     try {
       const script = path.resolve(ROOT, 'scripts', 'make-card.js');
       const mod = await import(pathToFileURL(script).href);
-      const { moves, pgn, fen, config, duplicateStrategy } = payload || {};
+      const { moves, pgn, fen, config, duplicateStrategy, tags } = payload || {};
       // Be tolerant of callers: accept either duplicateStrategy or legacy dup
       const dupFromPayload = (typeof duplicateStrategy === 'string' && duplicateStrategy)
         || (typeof (payload?.dup) === 'string' && payload.dup)
@@ -496,16 +496,20 @@ function registerIpc() {
         hasFEN: !!(fen && String(fen).trim()),
         cfg: config ? { acc: config.otherAnswersAcceptance, moac: config.maxOtherAnswerCount, depth: config.depth, threads: config.threads, hash: config.hash } : null,
       });
-      await mod.createCard({
+      const res = await mod.createCard({
         movesSAN: movesList,
         pgn: typeof pgn === 'string' ? pgn : '',
         fen: typeof fen === 'string' ? fen : '',
         config: (config && typeof config === 'object') ? config : undefined,
         resolveEngine: { baseDir: app.isPackaged ? process.resourcesPath : path.join(__dirname, '..'), packaged: app.isPackaged },
         duplicateStrategy: dupFromPayload,
+        tags: Array.isArray(tags) ? tags : undefined,
       });
-      console.log('[ipc:cardgen:make-card] createCard finished');
-      return { ok: true, message: 'Card created.' };
+      const message = (res && typeof res.message === 'string')
+        ? res.message
+        : (res?.skipped ? 'Skipped: duplicate exists.' : 'Card created.');
+      console.log('[ipc:cardgen:make-card] createCard finished', { id: res?.id, deckId: res?.deckId, skipped: res?.skipped });
+      return { ok: res?.ok !== false, message, id: res?.id, deckId: res?.deckId, skipped: res?.skipped, existingId: res?.existingId };
     } catch (e) {
       console.error('[cardgen:make-card] failed (programmatic only):', e);
       return { ok: false, message: e?.message || 'Programmatic createCard failed' };

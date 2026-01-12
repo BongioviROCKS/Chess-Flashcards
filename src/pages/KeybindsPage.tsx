@@ -6,7 +6,7 @@ import { useBackKeybind } from '../hooks/useBackKeybind';
 type Row = {
   action:
     | 'app.back'
-    | 'board.first' | 'board.prev' | 'board.next' | 'board.last' | 'board.flip'
+    | 'board.first' | 'board.prev' | 'board.review' | 'board.next' | 'board.last' | 'board.flip'
     | 'review.showAnswer' | 'review.again' | 'review.hard' | 'review.good' | 'review.easy' | 'review.undo';
   label: string;
 };
@@ -16,11 +16,12 @@ const NAV_ROWS: Row[] = [
 ];
 
 const BOARD_ROWS: Row[] = [
-  { action: 'board.first', label: 'First Position' },
-  { action: 'board.prev',  label: 'Previous' },
-  { action: 'board.next',  label: 'Next' },
-  { action: 'board.last',  label: 'Last Position' },
-  { action: 'board.flip',  label: 'Flip Board' },
+  { action: 'board.first',  label: 'First Position' },
+  { action: 'board.prev',   label: 'Previous' },
+  { action: 'board.review', label: 'Review Position' },
+  { action: 'board.next',   label: 'Next' },
+  { action: 'board.last',   label: 'Last Position' },
+  { action: 'board.flip',   label: 'Flip Board' },
 ];
 
 const REVIEW_ROWS: Row[] = [

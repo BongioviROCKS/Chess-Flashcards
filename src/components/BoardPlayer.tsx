@@ -40,6 +40,9 @@ type Base = {
   labelForIndex?: (idx: number, moveSan: string | null) => React.ReactNode;
   /** notify external listeners when index changes */
   onIndexChange?: (idx: number) => void;
+  /** optional index or FEN for the "review position" jump button */
+  reviewIndex?: number;
+  reviewFen?: string;
 };
 
 export type BoardPlayerProps = (PgnMode | SanMode | FramesMode) & Base;
@@ -58,7 +61,7 @@ function pgnToSanArray(pgn: string): string[] {
 }
 
 /** Inline, solid SVG icons (consistent across platforms) */
-function Icon({ name }: { name: 'first' | 'prev' | 'next' | 'last' }) {
+function Icon({ name }: { name: 'first' | 'prev' | 'next' | 'last' | 'review' }) {
   if (name === 'prev') {
     return (
       <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -80,6 +83,13 @@ function Icon({ name }: { name: 'first' | 'prev' | 'next' | 'last' }) {
       </svg>
     );
   }
+  if (name === 'review') {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="7" />
+      </svg>
+    );
+  }
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M15 6h2v12h-2zM6.59 7.41 8 6l6 6-6 6-1.41-1.41L11.17 12z" />
@@ -88,9 +98,17 @@ function Icon({ name }: { name: 'first' | 'prev' | 'next' | 'last' }) {
 }
 
 export default function BoardPlayer(props: BoardPlayerProps & WithFlip) {
-  const { size = 360, startAt = 'last', orientation = 'white', showMoveLabel = true } = props;
+  const {
+    size = 360,
+    startAt = 'last',
+    orientation = 'white',
+    showMoveLabel = true,
+    reviewIndex: reviewIndexProp,
+    reviewFen: reviewFenProp,
+  } = props;
   const { binds } = useKeybinds();
-  const keysFor = useCallback((action: 'board.first'|'board.prev'|'board.next'|'board.last'): string => {
+  type NavAction = 'board.first' | 'board.prev' | 'board.review' | 'board.next' | 'board.last';
+  const keysFor = useCallback((action: NavAction): string => {
     return formatActionKeys(binds, action as any);
   }, [binds]);
 
@@ -169,16 +187,39 @@ export default function BoardPlayer(props: BoardPlayerProps & WithFlip) {
   useEffect(() => { props.onIndexChange?.(idx); }, [idx]);
   const atStart = idx <= 0;
   const atEnd = idx >= frames.length - 1;
+  const reviewTargetFen = reviewFenProp ?? (props.mode === 'pgn' ? props.targetFen : undefined);
+  const reviewAt = useMemo(() => {
+    if (typeof reviewIndexProp === 'number' && Number.isFinite(reviewIndexProp)) {
+      const clamped = Math.max(0, Math.min(frames.length - 1, Math.round(reviewIndexProp)));
+      if (frames.length) return clamped;
+    }
+    if (reviewTargetFen) {
+      const i = frames.findIndex(f => f === reviewTargetFen);
+      if (i >= 0) return i;
+    }
+    return null;
+  }, [frames, reviewIndexProp, reviewTargetFen]);
 
   // --- keybind handlers (ArrowDown=first, ArrowLeft=prev, ArrowRight=next, ArrowUp=last) ---
   const goFirst = useCallback(() => setIdx(0), []);
   const goPrev  = useCallback(() => setIdx(i => Math.max(0, i - 1)), []);
   const goNext  = useCallback(() => setIdx(i => Math.min(frames.length - 1, i + 1)), [frames.length]);
   const goLast  = useCallback(() => setIdx(frames.length - 1), [frames.length]);
+  const goReview = useCallback(() => {
+    if (reviewAt === null) return;
+    setIdx(reviewAt);
+  }, [reviewAt]);
 
   // Attach keybinds globally while this component is mounted.
   useBoardKeybinds(
-    { first: goFirst, prev: goPrev, next: goNext, last: goLast, flip: props.onFlip },
+    {
+      first: goFirst,
+      prev: goPrev,
+      review: reviewAt === null ? undefined : goReview,
+      next: goNext,
+      last: goLast,
+      flip: props.onFlip,
+    },
     true
   );
 
@@ -225,6 +266,16 @@ export default function BoardPlayer(props: BoardPlayerProps & WithFlip) {
         </button>
 
         <div className="bp-count sub">{Math.min(idx + 1, frames.length)} / {frames.length}</div>
+
+        <button
+          className="btn-icon"
+          disabled={reviewAt === null}
+          onClick={goReview}
+          title={`Review position${keysFor('board.review') ? ` (${keysFor('board.review')})` : ''}`}
+          aria-label="Review position"
+        >
+          <Icon name="review" />
+        </button>
 
         <button
           className="btn-icon"

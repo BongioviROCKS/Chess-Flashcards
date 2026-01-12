@@ -8,6 +8,7 @@ export type BoardKeyHandlers = {
   next?: () => void;
   last?: () => void;
   flip?: () => void;
+  review?: () => void;
 };
 
 /**
@@ -16,7 +17,7 @@ export type BoardKeyHandlers = {
  * Supports two bindings per action and modifiers (Ctrl/Alt/Shift/Meta).
  */
 export function useBoardKeybinds(handlers: BoardKeyHandlers, enabled = true) {
-  const { getActionForEvent } = useKeybinds();
+  const { getActionsForEvent } = useKeybinds();
   const { settings } = useSettings();
 
   const repeatConfig = useMemo(() => {
@@ -94,13 +95,19 @@ export function useBoardKeybinds(handlers: BoardKeyHandlers, enabled = true) {
     const onKeyDown = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
 
-      const action = getActionForEvent(e);
-      if (!action) return;
+      const actions = getActionsForEvent(e);
+      if (actions.length === 0) return;
+
+      const boardPriority: KeyAction[] = ['board.first', 'board.prev', 'board.next', 'board.last', 'board.review', 'board.flip'];
+      const boardAction = boardPriority.find(act => actions.includes(act));
+      if (!boardAction) return;
+
+      const hasNonBoard = actions.some(act => !act.startsWith('board.'));
 
       let handled = false;
       let suppressed = false;
 
-      switch (action as KeyAction) {
+      switch (boardAction as KeyAction) {
         case 'board.first':
           if (handlers.first) { handlers.first(); handled = true; }
           break;
@@ -129,6 +136,9 @@ export function useBoardKeybinds(handlers: BoardKeyHandlers, enabled = true) {
         case 'board.last':
           if (handlers.last) { handlers.last(); handled = true; }
           break;
+        case 'board.review':
+          if (handlers.review) { handlers.review(); handled = true; }
+          break;
         case 'board.flip':
           if (handlers.flip) { handlers.flip(); handled = true; }
           break;
@@ -137,17 +147,24 @@ export function useBoardKeybinds(handlers: BoardKeyHandlers, enabled = true) {
       if (handled || suppressed) {
         // Prevent the page from scrolling with arrow keys while navigating
         e.preventDefault();
-        e.stopPropagation();
+        if (!hasNonBoard) e.stopPropagation();
       }
     };
 
     const onKeyUp = (e: KeyboardEvent) => {
       if (isTypingTarget(e.target)) return;
-      const action = getActionForEvent(e);
-      if (!action) return;
-      if (action === 'board.next' || action === 'board.prev') {
-        const hadTimer = !!holdTimersRef.current[action];
-        stopHold(action);
+      const actions = getActionsForEvent(e);
+      if (actions.includes('board.next')) {
+        const hadTimer = !!holdTimersRef.current['board.next'];
+        stopHold('board.next');
+        if (hadTimer) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      }
+      if (actions.includes('board.prev')) {
+        const hadTimer = !!holdTimersRef.current['board.prev'];
+        stopHold('board.prev');
         if (hadTimer) {
           e.preventDefault();
           e.stopPropagation();
@@ -170,12 +187,13 @@ export function useBoardKeybinds(handlers: BoardKeyHandlers, enabled = true) {
       stopAllHolds();
     };
   }, [
-    getActionForEvent,
+    getActionsForEvent,
     handlers.first,
     handlers.prev,
     handlers.next,
     handlers.last,
     handlers.flip,
+    handlers.review,
     enabled,
     repeatConfig.enabled,
     repeatConfig.intervalMs,

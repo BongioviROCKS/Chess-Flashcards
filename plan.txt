@@ -1,7 +1,3 @@
-In review, collection, and editor, add another navigation button with the arrows to skip to Review Position
-    circle icon on button
-    navigatable via space bar or enter
-on overwrite? pop up on add card, add option to keep both
 add status pop up on auto add
 add feature to analyze games before auto-add and get player preferences
 add feature to just think (don't add) on manual stockfish assisted add

@@ -1,5 +1,5 @@
 // src/pages/ManualAddPage.tsx
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBackKeybind } from '../hooks/useBackKeybind';
 import { useKeybinds, formatActionKeys } from '../context/KeybindsProvider';
@@ -59,8 +59,9 @@ type CardgenBridge = {
     // (legacy/bridge calls sometimes send moves as a string; our code converts)
     moves?: string;
     config?: CardgenConfig;
-    duplicateStrategy?: 'skip' | 'overwrite' | 'prompt';
-  }) => Promise<{ ok: boolean; message?: string }>;
+    tags?: string[];
+    duplicateStrategy?: 'skip' | 'overwrite' | 'prompt' | 'keep-both';
+  }) => Promise<{ ok: boolean; message?: string; id?: string; deckId?: string; skipped?: boolean; existingId?: string }>;
 };
 type CardsBridge = {
   readAll?: () => Promise<Card[]>;
@@ -73,6 +74,7 @@ const getCards   = (): CardsBridge   | undefined => (window as any).cards   as C
 
 const LABEL_COL = 200;
 const contentShellStyle: React.CSSProperties = { width: '100%', maxWidth: 'none', margin: '0 auto' };
+const ARCHIVE_TAG = 'Archived';
 
 const clampInt = (v: number, min: number, max?: number) => {
   if (!Number.isFinite(v)) return min;
@@ -80,6 +82,18 @@ const clampInt = (v: number, min: number, max?: number) => {
   if (v < min) v = min;
   if (typeof max === 'number' && v > max) v = max;
   return v;
+};
+
+const withArchiveTag = (tags?: string[]) => {
+  const set = new Set<string>();
+  if (Array.isArray(tags)) {
+    for (const t of tags) {
+      const clean = typeof t === 'string' ? t.trim() : '';
+      if (clean) set.add(clean);
+    }
+  }
+  set.add(ARCHIVE_TAG);
+  return Array.from(set);
 };
 
 export default function ManualAddPage() {
@@ -117,11 +131,34 @@ export default function ManualAddPage() {
     candidateDetails: any;
     // For stockfish overwrite
     payload?: any;
+    keepBothPayload?: any;
     // For full overwrite
     newCard?: Card;
+    candidateCard?: Card;
   }>(null);
+  const [dupKeepMenuOpen, setDupKeepMenuOpen] = useState(false);
+  const dupKeepMenuRef = useRef<HTMLDivElement | null>(null);
   const [dupWorking, setDupWorking] = useState(false);
   const [dupErr, setDupErr] = useState<string | null>(null);
+  useEffect(() => {
+    if (!dupKeepMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (!dupKeepMenuRef.current) return;
+      const target = e.target as Node | null;
+      if (target && dupKeepMenuRef.current.contains(target)) return;
+      setDupKeepMenuOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setDupKeepMenuOpen(false);
+    };
+    window.addEventListener('mousedown', handleClick);
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      window.removeEventListener('mousedown', handleClick);
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [dupKeepMenuOpen]);
+  useEffect(() => { if (!dupPrompt) setDupKeepMenuOpen(false); }, [dupPrompt]);
 
   // --- Full Manual Add ---
   const blankManual: ManualDraft = useMemo(
@@ -268,7 +305,7 @@ export default function ManualAddPage() {
     inputKind: 'moves' | 'pgn' | 'fen',
     review: { sans: string[] },
     opts: {
-      duplicateStrategy: 'skip' | 'overwrite' | 'prompt',
+      duplicateStrategy: 'skip' | 'overwrite' | 'prompt' | 'keep-both',
       acc: number,
       moac: number,
       depth: number,
@@ -277,6 +314,7 @@ export default function ManualAddPage() {
       hwThreads: number,
       pgn: string,
       fen: string,
+      tags?: string[],
     }
   ) {
     const base = {
@@ -288,6 +326,7 @@ export default function ManualAddPage() {
         hash: Math.max(32, opts.hash),
       },
       duplicateStrategy: opts.duplicateStrategy,
+      ...(opts.tags ? { tags: opts.tags } : {}),
     } as any;
 
     if (inputKind === 'fen') {
@@ -341,6 +380,13 @@ export default function ManualAddPage() {
       pgn, fen,
     });
 
+    const argsKeepBoth = buildCardgenArgsForInput(inputKind, review, {
+      duplicateStrategy: 'keep-both',
+      acc, moac, depth, threads, hash,
+      hwThreads,
+      pgn, fen,
+    });
+
     if (dup) {
       // Show prompt with an overwrite payload that already includes the move sequence.
       const existingDetails = dup?.fields?.creationCriteria || {
@@ -365,6 +411,7 @@ export default function ManualAddPage() {
         existingDetails,
         candidateDetails,
         payload: argsOverwrite,
+        keepBothPayload: argsKeepBoth,
       });
       return;
     }
@@ -478,7 +525,8 @@ export default function ManualAddPage() {
           existingCard: dup,
           existingDetails,
           candidateDetails,
-          newCard: { ...card, id: dup.id },
+          newCard: { ...card, id: dup.id, fields: { ...card.fields } },
+          candidateCard: { ...card, fields: { ...card.fields } },
         });
         return; // wait for user choice
       }
@@ -496,6 +544,106 @@ export default function ManualAddPage() {
       setSaving(false);
     }
   }
+
+  const handleKeepBoth = useCallback(async (archiveTarget: 'existing' | 'new') => {
+    if (!dupPrompt) return;
+    setDupErr(null);
+    setDupWorking(true);
+    setDupKeepMenuOpen(false);
+    try {
+      if (dupPrompt.mode === 'stockfish') {
+        const cardgen = getCardgen();
+        if (!cardgen?.makeCard) {
+          setDupErr('Backend not available: window.cardgen.makeCard missing.');
+          return;
+        }
+        const payloadBase = dupPrompt.keepBothPayload || dupPrompt.payload;
+        if (!payloadBase) {
+          setDupErr('Missing payload for duplicate creation.');
+          return;
+        }
+        const payload = { ...payloadBase };
+        payload.duplicateStrategy = 'keep-both';
+        if (archiveTarget === 'new') {
+          payload.tags = withArchiveTag(payload.tags);
+        }
+        setSfBusy(true);
+        const res = await cardgen.makeCard(payload);
+        if (!res?.ok || res?.skipped) {
+          const msg = String(res?.message || '').toLowerCase();
+          if (msg.includes('cancel')) setDupErr('Cancelled');
+          else setDupErr(res?.message || 'Failed to create duplicate card.');
+          return;
+        }
+        if (archiveTarget === 'existing' && dupPrompt.existingCard) {
+          const cardsApi = getCards();
+          if (!cardsApi?.update) {
+            setDupErr('Backend not available: window.cards.update missing.');
+            return;
+          }
+          const archivedExisting: Card = {
+            ...dupPrompt.existingCard,
+            tags: withArchiveTag(dupPrompt.existingCard.tags),
+            fields: { ...dupPrompt.existingCard.fields },
+          };
+          const okArchive = await cardsApi.update(archivedExisting);
+          if (!okArchive) {
+            setDupErr('Created new card but failed to archive existing.');
+            return;
+          }
+        }
+        setSfMsg(res.message || 'Created.');
+        setDupPrompt(null);
+      } else {
+        const cardsApi = getCards();
+        if (!cardsApi?.create) {
+          setDupErr('Backend not available: window.cards.create missing.');
+          return;
+        }
+        const candidate = dupPrompt.candidateCard;
+        if (!candidate) {
+          setDupErr('Missing card details for duplicate.');
+          return;
+        }
+        const newCard: Card = {
+          ...candidate,
+          id: candidate.id || newId(),
+          tags: archiveTarget === 'new' ? withArchiveTag(candidate.tags) : (Array.isArray(candidate.tags) ? [...candidate.tags] : []),
+          fields: { ...candidate.fields },
+        };
+        const okCreate = await cardsApi.create(newCard);
+        if (!okCreate) {
+          setDupErr('Failed to create duplicate card.');
+          return;
+        }
+        if (archiveTarget === 'existing' && dupPrompt.existingCard) {
+          if (!cardsApi.update) {
+            setDupErr('Backend not available: window.cards.update missing.');
+            return;
+          }
+          const archivedExisting: Card = {
+            ...dupPrompt.existingCard,
+            tags: withArchiveTag(dupPrompt.existingCard.tags),
+            fields: { ...dupPrompt.existingCard.fields },
+          };
+          const okArchive = await cardsApi.update(archivedExisting);
+          if (!okArchive) {
+            setDupErr('Created new card but failed to archive existing.');
+            return;
+          }
+        }
+        setSaved(true);
+        setRoot({ id: newId() });
+        setDupPrompt(null);
+      }
+    } catch (e: any) {
+      setDupErr(e?.message || 'Failed to keep both cards.');
+    } finally {
+      setSfBusy(false);
+      setSaving(false);
+      setDupWorking(false);
+    }
+  }, [dupPrompt]);
 
   // Stable handler for the overwrite button (prevents any inline/hoisting oddities)
   const confirmOverwrite = useCallback(async () => {
@@ -1058,30 +1206,60 @@ export default function ManualAddPage() {
           aria-modal="true"
           aria-label="Overwrite existing card confirmation"
         >
-          <div style={{ background: '#fff', color: '#000', borderRadius: 8, width: 'min(900px, 92vw)', maxHeight: '85vh', overflow: 'auto', boxShadow: '0 10px 24px rgba(0,0,0,0.25)', padding: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+          <div style={{ background: '#fff', color: '#000', borderRadius: 8, width: 'min(900px, 92vw)', maxHeight: '90vh', overflow: 'visible', boxShadow: '0 10px 24px rgba(0,0,0,0.25)', padding: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <h3 style={{ margin: 0 }}>A card already exists for this PGN. Overwrite?</h3>
               <button type="button" className="button secondary" onClick={() => setDupPrompt(null)}>Close</button>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div>
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>Existing</div>
-                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: '#f7f7f7', border: '1px solid #ddd', borderRadius: 6, padding: 8 }}>
+            <div style={{ flex: 1, overflow: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                <div>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>Existing</div>
+                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: '#f7f7f7', border: '1px solid #ddd', borderRadius: 6, padding: 8 }}>
 {JSON.stringify(dupPrompt.existingDetails, null, 2)}
-                </pre>
-              </div>
-              <div>
-                <div style={{ fontWeight: 600, marginBottom: 6 }}>New</div>
-                <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: '#f7f7f7', border: '1px solid #ddd', borderRadius: 6, padding: 8 }}>
+                  </pre>
+                </div>
+                <div>
+                  <div style={{ fontWeight: 600, marginBottom: 6 }}>New</div>
+                  <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', background: '#f7f7f7', border: '1px solid #ddd', borderRadius: 6, padding: 8 }}>
 {JSON.stringify(dupPrompt.candidateDetails, null, 2)}
-                </pre>
+                  </pre>
+                </div>
               </div>
+              {dupErr && (
+                <div className="sub" style={{ color: 'var(--danger, #d33)', marginTop: 8 }} aria-live="polite">{dupErr}</div>
+              )}
             </div>
-            {dupErr && (
-              <div className="sub" style={{ color: 'var(--danger, #d33)', marginTop: 8 }} aria-live="polite">{dupErr}</div>
-            )}
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 12 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', alignItems: 'center', position: 'relative' }}>
               <button type="button" className="button secondary" onClick={() => setDupPrompt(null)} disabled={dupWorking}>Cancel</button>
+              <div ref={dupKeepMenuRef} style={{ position: 'relative' }}>
+                <button type="button" className="button secondary" onClick={() => setDupKeepMenuOpen(prev => !prev)} disabled={dupWorking}>
+                  <span>Keep Both</span>
+                  <span style={{ fontSize: 12, opacity: 0.8 }}>▾</span>
+                </button>
+                {dupKeepMenuOpen && (
+                  <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--panel)', border: '1px solid var(--border-strong)', borderRadius: 8, minWidth: 220, boxShadow: '0 6px 16px rgba(0,0,0,0.25)', padding: 6, zIndex: 5 }}>
+                    <button
+                      type="button"
+                      onClick={() => handleKeepBoth('existing')}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer' }}
+                      disabled={dupWorking}
+                    >
+                      <div style={{ fontWeight: 600 }}>Archive original</div>
+                      <div className="sub" style={{ marginTop: 2 }}>Keep both cards and archive the existing one</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleKeepBoth('new')}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer', marginTop: 6 }}
+                      disabled={dupWorking}
+                    >
+                      <div style={{ fontWeight: 600 }}>Archive new</div>
+                      <div className="sub" style={{ marginTop: 2 }}>Create the new card archived and keep the original active</div>
+                    </button>
+                  </div>
+                )}
+              </div>
               {dupPrompt.mode === 'stockfish' && dupWorking && (
                 <button type="button" className="button secondary" onClick={cancelStockfish}>
                   Cancel Run

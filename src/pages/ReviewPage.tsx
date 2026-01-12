@@ -283,6 +283,7 @@ export default function ReviewPage() {
                     mode="pgn"
                     pgn={current!.fields.moveSequence}
                     targetFen={current!.fields.fen}
+                    reviewFen={current!.fields.fen}
                     includeInitialFrame={true}
                     size={420}
                     startAt={frontStartAt}
@@ -315,6 +316,7 @@ export default function ReviewPage() {
                     frames={backFramesInfo.frames}
                     startIndex={backFramesInfo.startIndex}
                     frameMoves={backFramesInfo.moves}
+                    reviewFen={current!.fields.fen}
                     size={420}
                     orientation={orientation}
                     showMoveLabel={true}

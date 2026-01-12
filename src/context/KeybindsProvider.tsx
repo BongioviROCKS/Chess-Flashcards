@@ -8,6 +8,7 @@ export type KeyAction =
   | 'board.prev'
   | 'board.next'
   | 'board.last'
+  | 'board.review'
   | 'board.flip'
   // Review actions
   | 'review.showAnswer'
@@ -40,11 +41,12 @@ const DEFAULT_BINDS: KeybindMap = {
   'app.back': ['Backspace', ''],
 
   // Board
-  'board.first': ['ArrowDown', 'S'],
-  'board.prev':  ['ArrowLeft', 'A'],
-  'board.next':  ['ArrowRight', 'D'],
-  'board.last':  ['ArrowUp', 'W'],
-  'board.flip':  ['F', ''],
+  'board.first':  ['ArrowDown', 'S'],
+  'board.prev':   ['ArrowLeft', 'A'],
+  'board.review': ['Enter', ''],
+  'board.next':   ['ArrowRight', 'D'],
+  'board.last':   ['ArrowUp', 'W'],
+  'board.flip':   ['F', ''],
 
   // Review
   'review.showAnswer': ['Space', 'Enter'],
@@ -107,6 +109,12 @@ function loadFromStorage(): KeybindMap | null {
     const back = out['app.back'];
     if (back && back[0] === '' && back[1] === '') {
       out['app.back'] = [...DEFAULT_BINDS['app.back']];
+    }
+
+    // Migration: drop Space as default for board.review (Enter only)
+    const review = out['board.review'];
+    if (review && review[0] === 'Space' && review[1] === 'Enter') {
+      out['board.review'] = [...DEFAULT_BINDS['board.review']];
     }
 
     return out as KeybindMap;
