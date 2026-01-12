@@ -58,6 +58,9 @@ function load(): Settings {
       const clamped = Math.max(0, Math.min(20, Math.round(rate * 10) / 10));
       merged.boardHoldStepsPerSecond = clamped;
     }
+    // Stockfish engine options are pinned to defaults (no user override)
+    merged.stockfishThreads = DEFAULTS.stockfishThreads;
+    merged.stockfishHash = DEFAULTS.stockfishHash;
 
     return merged;
   } catch {

@@ -92,8 +92,9 @@ function loadConfig() {
       otherAnswersAcceptance: Number(cfg.otherAnswersAcceptance ?? def.otherAnswersAcceptance),
       maxOtherAnswerCount: Number(cfg.maxOtherAnswerCount ?? def.maxOtherAnswerCount),
       depth: Number(cfg.depth ?? def.depth),
-      threads: Number(cfg.threads ?? def.threads),
-      hash: Number(cfg.hash ?? def.hash),
+      // Threads/Hash are pinned to defaults
+      threads: def.threads,
+      hash: def.hash,
     };
   } catch {
     return def;
@@ -328,6 +329,8 @@ async function analyzeWithStockfish(fen, { depth, threads, hash, multipv }, reso
     send(child, `setoption name Threads value ${threads}`);
     send(child, `setoption name Hash value ${hash}`);
     send(child, `setoption name MultiPV value ${multipv}`);
+    if (threads == 1) send(child, 'setoption name Clear Hash');
+    if (threads == 1) send(child, 'setoption name Ponder value false');
     send(child, 'isready');
     send(child, 'ucinewgame');
     send(child, `position fen ${fen}`);

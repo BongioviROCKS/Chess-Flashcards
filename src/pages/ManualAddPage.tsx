@@ -48,6 +48,10 @@ type CardgenConfig = {
   threads: number;
   hash: number;
 };
+
+const STOCKFISH_THREADS = 1;
+const STOCKFISH_HASH_MB = 1024;
+
 type CardgenBridge = {
   saveConfig?: (cfg: CardgenConfig) => Promise<boolean>;
   makeCard?: (args: {
@@ -115,8 +119,6 @@ export default function ManualAddPage() {
   const [acc, setAcc] = useState<number>(Number(settings.otherAnswersAcceptance ?? 0.2));
   const [moac, setMoac] = useState<number>(Number(settings.maxOtherAnswerCount ?? 4));
   const [depth, setDepth] = useState<number>(Number(settings.stockfishDepth ?? 25));
-  const [threads, setThreads] = useState<number>(Number(settings.stockfishThreads ?? 1));
-  const [hash, setHash] = useState<number>(Number(settings.stockfishHash ?? 1024));
 
   const [sfBusy, setSfBusy] = useState(false);
   const [sfMsg, setSfMsg] = useState<string>('');
@@ -203,9 +205,7 @@ export default function ManualAddPage() {
     };
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true } as any);
-  }, [mode, sfBusy, saving, moves, pgn, fen, acc, moac, depth, threads, hash, draft]);
-
-  const hwThreads = Math.max(1, (navigator as any).hardwareConcurrency || 1);
+  }, [mode, sfBusy, saving, moves, pgn, fen, acc, moac, depth, draft]);
 
   const goBack = () => navigate(-1);
 
@@ -244,28 +244,6 @@ export default function ManualAddPage() {
   const onDepthBlur: React.FocusEventHandler<HTMLInputElement> = (e) => {
     const v = parseInt(e.currentTarget.value, 10);
     setDepth(clampInt(Number.isFinite(v) ? v : depth, 1, 99));
-  };
-
-  const incThreads = () => setThreads(clampInt(threads + 1, 1, hwThreads));
-  const decThreads = () => setThreads(clampInt(threads - 1, 1, hwThreads));
-  const onThreadsKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === 'ArrowUp') { e.preventDefault(); incThreads(); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); decThreads(); }
-  };
-  const onThreadsBlur: React.FocusEventHandler<HTMLInputElement> = (e) => {
-    const v = parseInt(e.currentTarget.value, 10);
-    setThreads(clampInt(Number.isFinite(v) ? v : threads, 1, hwThreads));
-  };
-
-  const incHash = () => setHash(clampInt(hash + 64, 32));
-  const decHash = () => setHash(clampInt(hash - 64, 32));
-  const onHashKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === 'ArrowUp') { e.preventDefault(); incHash(); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); decHash(); }
-  };
-  const onHashBlur: React.FocusEventHandler<HTMLInputElement> = (e) => {
-    const v = parseInt(e.currentTarget.value, 10);
-    setHash(clampInt(Number.isFinite(v) ? v : hash, 32));
   };
 
   function computeReviewFromInput(): { ok: boolean; reason?: string; sans: string[]; reviewFEN: string; deckId: string; pathKey: string } {
@@ -309,9 +287,6 @@ export default function ManualAddPage() {
       acc: number,
       moac: number,
       depth: number,
-      threads: number,
-      hash: number,
-      hwThreads: number,
       pgn: string,
       fen: string,
       tags?: string[],
@@ -322,8 +297,8 @@ export default function ManualAddPage() {
         otherAnswersAcceptance: opts.acc,
         maxOtherAnswerCount: opts.moac,
         depth: opts.depth,
-        threads: Math.max(1, Math.min(opts.hwThreads, opts.threads)),
-        hash: Math.max(32, opts.hash),
+        threads: STOCKFISH_THREADS,
+        hash: STOCKFISH_HASH_MB,
       },
       duplicateStrategy: opts.duplicateStrategy,
       ...(opts.tags ? { tags: opts.tags } : {}),
@@ -368,22 +343,19 @@ export default function ManualAddPage() {
 
     const argsSkip = buildCardgenArgsForInput(inputKind, review, {
       duplicateStrategy: 'skip',
-      acc, moac, depth, threads, hash,
-      hwThreads,
+      acc, moac, depth,
       pgn, fen,
     });
 
     const argsOverwrite = buildCardgenArgsForInput(inputKind, review, {
       duplicateStrategy: 'overwrite',
-      acc, moac, depth, threads, hash,
-      hwThreads,
+      acc, moac, depth,
       pgn, fen,
     });
 
     const argsKeepBoth = buildCardgenArgsForInput(inputKind, review, {
       duplicateStrategy: 'keep-both',
-      acc, moac, depth, threads, hash,
-      hwThreads,
+      acc, moac, depth,
       pgn, fen,
     });
 
@@ -401,7 +373,7 @@ export default function ManualAddPage() {
       };
       const candidateDetails = {
         input: { movesSAN: review.sans.slice(), pgn: (pgn || ''), fen: review.reviewFEN },
-        configUsed: { otherAnswersAcceptance: acc, maxOtherAnswerCount: moac, depth, threads, hash, multipv: 1 + Math.max(0, moac) },
+        configUsed: { otherAnswersAcceptance: acc, maxOtherAnswerCount: moac, depth, threads: STOCKFISH_THREADS, hash: STOCKFISH_HASH_MB, multipv: 1 + Math.max(0, moac) },
       };
       setDupErr(null);
       setDupPrompt({
@@ -910,83 +882,6 @@ export default function ManualAddPage() {
                 <div className="num-stepper" aria-hidden="false">
                   <button type="button" className="step up" onClick={incDepth} title="Increase by 1" aria-label="Increase">▲</button>
                   <button type="button" className="step down" onClick={decDepth} title="Decrease by 1" aria-label="Decrease">▼</button>
-                </div>
-              </div>
-            </div>
-
-            {/* Threads */}
-            <div className="row" style={{ display: 'grid', gridTemplateColumns: `${LABEL_COL}px auto`, gap: 12, alignItems: 'center' }}>
-              <div>Threads</div>
-              <div className="num-wrap">
-                <input
-                  className="no-native-spin"
-                  type="text"
-                  inputMode="numeric"
-                  value={String(threads)}
-                  onChange={e => {
-                    const v = parseInt(e.currentTarget.value, 10);
-                    if (Number.isFinite(v)) setThreads(v);
-                  }}
-                  onKeyDown={onThreadsKeyDown}
-                  onBlur={onThreadsBlur}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
-                    border: '1px solid var(--border-strong)',
-                    borderRadius: 8,
-                    padding: '6px 8px',
-                    width: 70,
-                    minWidth: 'unset',
-                    maxWidth: 80,
-                    display: 'inline-block',
-                    textAlign: 'right',
-                    fontFamily:
-                      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                  }}
-                  title={`Stockfish threads. Max suggested: ${hwThreads} (logical CPUs).`}
-                />
-                <div className="num-stepper" aria-hidden="false">
-                  <button type="button" className="step up" onClick={incThreads} title="Increase by 1" aria-label="Increase">▲</button>
-                  <button type="button" className="step down" onClick={decThreads} title="Decrease by 1" aria-label="Decrease">▼</button>
-                </div>
-              </div>
-              <div className="sub">Max suggested: {hwThreads}</div>
-            </div>
-
-            {/* Hash (MB) */}
-            <div className="row" style={{ display: 'grid', gridTemplateColumns: `${LABEL_COL}px auto`, gap: 12, alignItems: 'center' }}>
-              <div>Hash (MB)</div>
-              <div className="num-wrap">
-                <input
-                  className="no-native-spin"
-                  type="text"
-                  inputMode="numeric"
-                  value={String(hash)}
-                  onChange={e => {
-                    const v = parseInt(e.currentTarget.value, 10);
-                    if (Number.isFinite(v)) setHash(v);
-                  }}
-                  onKeyDown={onHashKeyDown}
-                  onBlur={onHashBlur}
-                  style={{
-                    backgroundColor: '#ffffff',
-                    color: '#000000',
-                    border: '1px solid var(--border-strong)',
-                    borderRadius: 8,
-                    padding: '6px 8px',
-                    width: 90,
-                    minWidth: 'unset',
-                    maxWidth: 120,
-                    display: 'inline-block',
-                    textAlign: 'right',
-                    fontFamily:
-                      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                  }}
-                  title="Transposition table size in MB."
-                />
-                <div className="num-stepper" aria-hidden="false">
-                  <button type="button" className="step up" onClick={incHash} title="Increase by 64" aria-label="Increase">▲</button>
-                  <button type="button" className="step down" onClick={decHash} title="Decrease by 64" aria-label="Decrease">▼</button>
                 </div>
               </div>
             </div>

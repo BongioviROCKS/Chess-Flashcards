@@ -2,6 +2,6 @@
   "otherAnswersAcceptance": 0.5,
   "maxOtherAnswerCount": 3,
   "depth": 20,
-  "threads": 16,
-  "hash": 16384
+  "threads": 1,
+  "hash": 1024
 }

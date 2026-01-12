@@ -13,6 +13,9 @@ type CardgenConfig = {
   hash: number; // MB
 };
 
+const STOCKFISH_THREADS = 1;
+const STOCKFISH_HASH_MB = 1024;
+
 declare global {
   interface Window {
     cardgen?: {
@@ -34,15 +37,13 @@ export default function SettingsPage() {
       otherAnswersAcceptance: Number(settings.otherAnswersAcceptance ?? 0),
       maxOtherAnswerCount: Number(settings.maxOtherAnswerCount ?? 0),
       depth: Number(settings.stockfishDepth ?? 25),
-      threads: Number(settings.stockfishThreads ?? 1),
-      hash: Number(settings.stockfishHash ?? 1024),
+      threads: STOCKFISH_THREADS,
+      hash: STOCKFISH_HASH_MB,
     }),
     [
       settings.otherAnswersAcceptance,
       settings.maxOtherAnswerCount,
       settings.stockfishDepth,
-      settings.stockfishThreads,
-      settings.stockfishHash,
     ]
   );
 
@@ -173,9 +174,6 @@ export default function SettingsPage() {
     return v;
   };
 
-  const hwThreads = Math.max(1, (navigator as any).hardwareConcurrency || 1);
-  const deviceMemGB = (navigator as any).deviceMemory || undefined;
-
   // ---- Other Answers Acceptance (0.01 step, 2 decimals, custom stepper) ----
   const setAcceptance = (next: number) => {
     if (!Number.isFinite(next) || next < 0) next = 0;
@@ -214,30 +212,6 @@ export default function SettingsPage() {
   const onDepthKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
     if (e.key === 'ArrowUp') { e.preventDefault(); incDepth(); }
     else if (e.key === 'ArrowDown') { e.preventDefault(); decDepth(); }
-  };
-
-  // ---- Threads (int, step 1, custom stepper) ----
-  const threads = settings.stockfishThreads;
-  const setThreads = (next: number) => {
-    update({ stockfishThreads: clampInt(next, 1, hwThreads) });
-  };
-  const incThreads = () => setThreads(threads + 1);
-  const decThreads = () => setThreads(threads - 1);
-  const onThreadsKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === 'ArrowUp') { e.preventDefault(); incThreads(); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); decThreads(); }
-  };
-
-  // ---- Hash (MB) (int, step 64, min 32, custom stepper) ----
-  const hash = settings.stockfishHash;
-  const setHash = (next: number) => {
-    update({ stockfishHash: clampInt(next, 32, 262144) });
-  };
-  const incHash = () => setHash(hash + 64);
-  const decHash = () => setHash(hash - 64);
-  const onHashKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === 'ArrowUp') { e.preventDefault(); incHash(); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); decHash(); }
   };
 
   return (
@@ -412,43 +386,6 @@ export default function SettingsPage() {
               <div className="num-stepper" aria-hidden="false">
                 <button type="button" className="step up" onClick={incDepth} title="Increase by 1" aria-label="Increase">▲</button>
                 <button type="button" className="step down" onClick={decDepth} title="Decrease by 1" aria-label="Decrease">▼</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Threads */}
-          <div className="row" title={`Engine threads (max suggested: ${hwThreads})`} style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
-            <div>Threads</div>
-            <div className="sub">Engine parallelism</div>
-            <div className="num-wrap" style={{ justifySelf: 'end' }}>
-              <input className="no-native-spin" type="text" inputMode="numeric" value={String(threads)}
-                onChange={e => setThreads(parseInt(e.currentTarget.value, 10))}
-                onKeyDown={onThreadsKeyDown}
-                onBlur={e => setThreads(parseInt(e.currentTarget.value, 10))}
-                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', width: 70, minWidth: 'unset', maxWidth: 80, display: 'inline-block', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace' }}
-              />
-              <div className="num-stepper" aria-hidden="false">
-                <button type="button" className="step up" onClick={incThreads} title="Increase by 1" aria-label="Increase">▲</button>
-                <button type="button" className="step down" onClick={decThreads} title="Decrease by 1" aria-label="Decrease">▼</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Hash (MB) */}
-          <div className="row" title="Transposition table size in MB" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
-            <div>Hash (MB)</div>
-            <div className="sub">Memory used by engine</div>
-            <div className="num-wrap" style={{ justifySelf: 'end' }}>
-              <input className="no-native-spin" type="text" inputMode="numeric" value={String(hash)}
-                onChange={e => setHash(parseInt(e.currentTarget.value, 10))}
-                onKeyDown={onHashKeyDown}
-                onBlur={e => setHash(parseInt(e.currentTarget.value, 10))}
-                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', width: 90, minWidth: 'unset', maxWidth: 120, display: 'inline-block', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
-                title={`${deviceMemGB ? `Device memory ~${deviceMemGB}GB` : 'Adjust to your RAM.'}`}
-              />
-              <div className="num-stepper" aria-hidden="false">
-                <button type="button" className="step up" onClick={incHash} title="Increase by 64" aria-label="Increase">▲</button>
-                <button type="button" className="step down" onClick={decHash} title="Decrease by 64" aria-label="Decrease">▼</button>
               </div>
             </div>
           </div>
