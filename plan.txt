@@ -1,4 +1,4 @@
-on overwrite? pop up, add option to keep both
+on overwrite? pop up on add card, add option to keep both
 add status pop up on auto add
 add feature to analyze games before auto-add and get player preferences
 add feature to just think (don't add) on manual stockfish assisted add
