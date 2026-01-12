@@ -97,3 +97,6 @@
 12/30/25:
     1 hour:
         add feature to import cards.json file from user (overwrite or merge)
+12/31/25:
+    1 hour:
+        add ability to duplicate a card in collection view

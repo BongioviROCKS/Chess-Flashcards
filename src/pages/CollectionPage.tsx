@@ -101,6 +101,22 @@ function fromDraft(d: Draft): Card {
   return card;
 }
 
+function generateCardId(): string {
+  return `c_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function cloneCardForDuplicate(card: Card): Card {
+  const clone = JSON.parse(JSON.stringify(card)) as Card;
+  clone.id = generateCardId();
+  clone.tags = Array.from(new Set([...(card.tags || []), 'Archived']));
+  if (clone.fields) {
+    delete (clone.fields as any).children;
+    delete (clone.fields as any).descendants;
+  }
+  clone.due = 'new';
+  return clone;
+}
+
 function sideToMoveFromFen(fen?: string): 'w' | 'b' {
   if (!fen) return 'w';
   const parts = fen.split(' ');
@@ -469,6 +485,9 @@ export default function CollectionPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState(false);
+  const [dupErr, setDupErr] = useState<string | null>(null);
+  useEffect(() => { setDupErr(null); }, [selectedId]);
   async function handleSave() {
     if (!draft) return;
     setSaving(true); setErr(null); setSaved(false);
@@ -479,6 +498,41 @@ export default function CollectionPage() {
       setSaved(true);
     } catch (e: any) { setErr(e?.message || 'Failed to save'); } finally { setSaving(false); }
   }
+
+  const handleDuplicate = useCallback(async () => {
+    if (!selected || duplicating) return;
+    const cardsApi = (window as any).cards;
+    if (!cardsApi?.create) {
+      setDupErr('Backend not available: window.cards.create missing.');
+      return;
+    }
+    setDuplicating(true);
+    setDupErr(null);
+    try {
+      const duplicate = cloneCardForDuplicate(selected);
+      const ok = await cardsApi.create(duplicate);
+      if (!ok) throw new Error('Failed to duplicate card.');
+      if (typeof cardsApi.readAll === 'function') {
+        try {
+          const arr = await cardsApi.readAll();
+          if (Array.isArray(arr)) {
+            replaceCards(arr as Card[]);
+          } else {
+            replaceCards([...all, duplicate]);
+          }
+        } catch {
+          replaceCards([...all, duplicate]);
+        }
+      } else {
+        replaceCards([...all, duplicate]);
+      }
+      setSelectedId(duplicate.id);
+    } catch (e: any) {
+      setDupErr(e?.message || 'Failed to duplicate card.');
+    } finally {
+      setDuplicating(false);
+    }
+  }, [selected, duplicating, all, setSelectedId]);
 
   const handleImport = useCallback(async (mode: 'add' | 'overwrite') => {
     setImportMenuOpen(false);
@@ -812,8 +866,17 @@ export default function CollectionPage() {
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         {saved && <div className="sub" aria-live="polite">Saved</div>}
                         {err && <div className="sub" style={{ color: 'var(--danger, #ff6b6b)' }}>{err}</div>}
+                        {dupErr && <div className="sub" style={{ color: 'var(--danger, #ff6b6b)' }}>{dupErr}</div>}
                         <button className="button secondary" onClick={() => setDraft(toDraft(selected))}>Revert</button>
-                        <button className="button" onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : 'Save'}</button>
+                        <button
+                          className="button secondary"
+                          onClick={handleDuplicate}
+                          disabled={duplicating}
+                          title="Duplicate card (copy is tagged Archived by default)"
+                        >
+                          {duplicating ? 'Duplicating...' : 'Duplicate'}
+                        </button>
+                        <button className="button" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
                         <button className="button secondary" onClick={() => navigate(`/edit/${selected.id}`, { state: { card: selected } })}>Open Full Editor</button>
                       </div>
                     </div>
