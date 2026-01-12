@@ -255,5 +255,34 @@
       }
     },
     "due": "new"
+  },
+  {
+    "id": "c_1768188096102_07jm",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Bc5 Nb3 Bb6 Nc3 d6 Qe2 Nf6 Be3 Bxe3 Qxe3 O-O O-O-O Re8 f3 d5 g4 Bxg4 fxg4 Nxg4 Qg3 Qg5+ Kb1 dxe4 h3 Qe5 Qxg4 e3",
+      "fen": "r3r1k1/ppp2ppp/2n5/4q3/6Q1/1NN1p2P/PPP5/1K1R1B1R w - - 0 18",
+      "answer": "Bc4",
+      "answerFen": "r3r1k1/ppp2ppp/2n5/4q3/2B3Q1/1NN1p2P/PPP5/1K1R3R b - - 1 18",
+      "eval": {"kind": "cp", "value": 606, "depth": 40},
+      "exampleLine": ["Bc4", "Rf8", "Rhf1", "Rae8", "Rf5", "e2", "Bxe2", "Qe3", "Qg2", "Ne7", "Rff1", "c6", "Nd4", "Rd8", "Rd3", "Qxd4", "Rxd4", "Rxd4", "Qf2", "c5", "a3", "b6", "Ka1", "Ng6", "Bd3", "f5", "Bxf5", "Rf4", "Qxf4", "Nxf4", "Rxf4", "Kh8", "Rf1", "g6", "Bd3", "Rxf1+", "Bxf1", "Kg7", "Ka2", "h5", "Nd5", "h4", "a4", "g5"],
+      "otherAnswers": [
+        {"move": "Bb5", "eval": {"kind": "cp", "value": 568, "depth": 40}},
+        {"move": "Qf3", "eval": {"kind": "cp", "value": 558, "depth": 40}},
+        {"move": "Be2", "eval": {"kind": "cp", "value": 558, "depth": 40}}
+      ],
+      "depth": 18,
+      "creationCriteria": {
+        "createdAt": "2026-01-12T03:21:36.102Z",
+        "input": {"movesSAN": ["e4", "e5", "Nf3", "Nc6", "d4", "exd4", "Nxd4", "Bc5", "Nb3", "Bb6", "Nc3", "d6", "Qe2", "Nf6", "Be3", "Bxe3", "Qxe3", "O-O", "O-O-O", "Re8", "f3", "d5", "g4", "Bxg4", "fxg4", "Nxg4", "Qg3", "Qg5+", "Kb1", "dxe4", "h3", "Qe5", "Qxg4", "e3"], "pgn": "", "fen": "r3r1k1/ppp2ppp/2n5/4q3/6Q1/1NN1p2P/PPP5/1K1R1B1R w - - 0 18"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 40, "threads": 16, "hash": 32768, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 5026849,
+        "engineBest": {"move": "Bc4", "eval": {"kind": "cp", "value": 606, "depth": 40}},
+        "forced": null,
+        "enginePath": "engines/win-x64/stockfish17.1.exe"
+      }
+    },
+    "due": "new"
   }
 ]
