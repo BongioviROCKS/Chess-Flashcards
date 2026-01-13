@@ -16,6 +16,8 @@ export type Settings = {
   // Accounts
   chessComUser?: string;
   lichessUser?: string;
+  chessComEnabled: boolean;
+  lichessEnabled: boolean;
 };
 
 const DEFAULTS: Settings = {
@@ -30,6 +32,8 @@ const DEFAULTS: Settings = {
   stockfishHash: 1024,
   chessComUser: '',
   lichessUser: '',
+  chessComEnabled: true,
+  lichessEnabled: true,
 };
 
 const KEY = 'chessflashcards.settings.v1';
@@ -61,6 +65,9 @@ function load(): Settings {
     // Stockfish engine options are pinned to defaults (no user override)
     merged.stockfishThreads = DEFAULTS.stockfishThreads;
     merged.stockfishHash = DEFAULTS.stockfishHash;
+
+    merged.chessComEnabled = typeof (parsed as any).chessComEnabled === 'boolean' ? (parsed as any).chessComEnabled : DEFAULTS.chessComEnabled;
+    merged.lichessEnabled = typeof (parsed as any).lichessEnabled === 'boolean' ? (parsed as any).lichessEnabled : DEFAULTS.lichessEnabled;
 
     return merged;
   } catch {

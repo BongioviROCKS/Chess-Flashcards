@@ -100,6 +100,79 @@ const withArchiveTag = (tags?: string[]) => {
   return Array.from(set);
 };
 
+type SanParseResult = { ok: boolean; sans: string[]; fen?: string; reason?: string };
+const MOVES_HINT = 'Enter moves in SAN separated by spaces (e.g., "e4 e5 Nf3").';
+const PGN_HINT = 'Enter a PGN such as "1. e4 e5 2. Nf3 Nc6".';
+
+function stripPgnToSans(raw: string): string[] {
+  const cleaned = String(raw || '')
+    .replace(/^\s*\[[^\]]*]\s*$/gm, '')
+    .replace(/;[^\n\r]*/g, '')
+    .replace(/\{[^}]*}/g, '')
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\$\d+/g, '')
+    .replace(/\b(1-0|0-1|1\/2-1\/2|\*)\b/g, '')
+    .replace(/\d+\.(\.\.)?/g, ' ')
+    .trim();
+  return cleaned.split(/\s+/).map(t => t.trim()).filter(Boolean);
+}
+
+function validateSansSequence(list: string[]): SanParseResult {
+  const c = new Chess();
+  for (let i = 0; i < list.length; i++) {
+    const token = list[i];
+    const mv = c.move(token);
+    if (!mv) {
+      return { ok: false, sans: [], reason: `Move ${i + 1} is invalid SAN: "${token}". ${MOVES_HINT}` };
+    }
+  }
+  return { ok: true, sans: c.history(), fen: c.fen() };
+}
+
+function parseMovesInput(raw: string): SanParseResult {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return { ok: false, sans: [], reason: MOVES_HINT };
+  }
+  const tokens = trimmed.split(/\s+/).filter(Boolean);
+  return validateSansSequence(tokens);
+}
+
+function normalizePgnSpacing(raw: string): string {
+  return String(raw || '').replace(/\s+/g, ' ').trim();
+}
+
+function trimToFirstMove(pgn: string): string {
+  const s = normalizePgnSpacing(pgn);
+  const idx = s.search(/\b1\.(\.{0,2})?/);
+  if (idx === -1) return s;
+  return s.slice(idx).trim();
+}
+
+function parsePgnInput(raw: string): SanParseResult {
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return { ok: false, sans: [], reason: PGN_HINT };
+  }
+  const normalized = trimmed.replace(/\r\n/g, '\n');
+  const chess = new Chess();
+  try {
+    const loaded = chess.loadPgn(normalized, { sloppy: true });
+    if (loaded) {
+      return { ok: true, sans: chess.history(), fen: chess.fen() };
+    }
+  } catch {}
+
+  // Fallback: strip headers/comments/move numbers, then validate the SAN list
+  const fallbackSans = stripPgnToSans(normalized);
+  if (!fallbackSans.length) {
+    return { ok: false, sans: [], reason: 'PGN contains no moves to parse.' };
+  }
+  const checked = validateSansSequence(fallbackSans);
+  if (checked.ok) return checked;
+  return { ok: false, sans: [], reason: checked.reason || 'Could not parse PGN. Double-check the moves.' };
+}
+
 export default function ManualAddPage() {
   const navigate = useNavigate();
   useBackKeybind(() => navigate(-1), true);
@@ -111,10 +184,9 @@ export default function ManualAddPage() {
   const [mode, setMode] = useState<'stockfish' | 'full'>('stockfish');
 
   // --- Stockfish Assisted ---
-  const [inputKind, setInputKind] = useState<'moves' | 'pgn' | 'fen'>('moves');
+  const [inputKind, setInputKind] = useState<'moves' | 'pgn'>('moves');
   const [moves, setMoves] = useState('');
   const [pgn, setPgn] = useState('');
-  const [fen, setFen] = useState('');
 
   const [acc, setAcc] = useState<number>(Number(settings.otherAnswersAcceptance ?? 0.2));
   const [moac, setMoac] = useState<number>(Number(settings.maxOtherAnswerCount ?? 4));
@@ -190,6 +262,38 @@ export default function ManualAddPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+  const handleInputKindChange = (next: 'moves' | 'pgn') => {
+    if (next === inputKind) return;
+    setErr(null);
+    setSfMsg('');
+    if (next === 'pgn') {
+      const src = moves.trim();
+      if (src) {
+        const parsedMoves = parseMovesInput(src);
+        if (parsedMoves.ok) {
+          const c = new Chess();
+          for (const san of parsedMoves.sans) c.move(san);
+          const generated = c.pgn({ maxWidth: 0, newline: ' ' });
+          const cleaned = trimToFirstMove(generated || parsedMoves.sans.join(' '));
+          setPgn(cleaned);
+        } else {
+          setPgn(trimToFirstMove(src)); // copy as-is if we cannot improve
+        }
+      }
+    } else {
+      const src = pgn.trim();
+      if (src) {
+        const parsedPgn = parsePgnInput(src);
+        if (parsedPgn.ok) {
+          setMoves(parsedPgn.sans.join(' '));
+        } else {
+          setMoves(src); // copy as-is if we cannot improve
+        }
+      }
+    }
+    setInputKind(next);
+  };
+
   // Ctrl+S to Create (both modes)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -205,7 +309,7 @@ export default function ManualAddPage() {
     };
     window.addEventListener('keydown', onKey, { capture: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true } as any);
-  }, [mode, sfBusy, saving, moves, pgn, fen, acc, moac, depth, draft]);
+  }, [mode, sfBusy, saving, moves, pgn, acc, moac, depth, draft]);
 
   const goBack = () => navigate(-1);
 
@@ -248,31 +352,18 @@ export default function ManualAddPage() {
 
   function computeReviewFromInput(): { ok: boolean; reason?: string; sans: string[]; reviewFEN: string; deckId: string; pathKey: string } {
     try {
-      if (inputKind === 'fen') {
-        const f = fen.trim();
-        if (!f) return { ok: false, reason: 'Enter a FEN.' } as any;
-        const parts = f.split(/\s+/);
-        const stm = parts[1] || 'w';
-        const deckId = stm === 'w' ? 'white-other' : 'black-other';
-        return { ok: true, sans: [], reviewFEN: f, deckId, pathKey: '' } as any;
+      const parsed = inputKind === 'moves' ? parseMovesInput(moves) : parsePgnInput(pgn);
+      if (!parsed.ok) {
+        return { ok: false, reason: parsed.reason, sans: [], reviewFEN: '', deckId: 'white-other', pathKey: '' } as any;
       }
-      let sans: string[] = [];
-      const c = new Chess();
-      if (inputKind === 'moves') {
-        sans = moves.trim().split(/\s+/).filter(Boolean);
-        for (const s of sans) { const mv = c.move(s); if (!mv) throw new Error(`Invalid SAN: ${s}`); }
-      } else {
-        // pgn
-        const s = pgn.trim();
-        if (!s) return { ok: false, reason: 'Enter a PGN.' } as any;
-        const ok = (c as any).loadPgn(s, { sloppy: true });
-        if (!ok) throw new Error('Invalid PGN');
-        sans = c.history();
-      }
-      const fenNow = c.fen();
+      const fenNow = parsed.fen ?? (() => {
+        const c = new Chess();
+        for (const san of parsed.sans) c.move(san);
+        return c.fen();
+      })();
       const deckId = (fenNow.split(' ')[1] === 'w') ? 'white-other' : 'black-other';
-      const pathKey = sans.join(' ');
-      return { ok: true, sans, reviewFEN: fenNow, deckId, pathKey } as any;
+      const pathKey = parsed.sans.join(' ');
+      return { ok: true, sans: parsed.sans, reviewFEN: fenNow, deckId, pathKey } as any;
     } catch (e: any) {
       return { ok: false, reason: e?.message || 'Invalid input', sans: [], reviewFEN: '', deckId: 'white-other', pathKey: '' } as any;
     }
@@ -280,7 +371,7 @@ export default function ManualAddPage() {
 
   /** Build args for cardgen.makeCard(). Always include the move sequence when available. */
   function buildCardgenArgsForInput(
-    inputKind: 'moves' | 'pgn' | 'fen',
+    inputKind: 'moves' | 'pgn',
     review: { sans: string[] },
     opts: {
       duplicateStrategy: 'skip' | 'overwrite' | 'prompt' | 'keep-both',
@@ -288,7 +379,6 @@ export default function ManualAddPage() {
       moac: number,
       depth: number,
       pgn: string,
-      fen: string,
       tags?: string[],
     }
   ) {
@@ -303,10 +393,6 @@ export default function ManualAddPage() {
       duplicateStrategy: opts.duplicateStrategy,
       ...(opts.tags ? { tags: opts.tags } : {}),
     } as any;
-
-    if (inputKind === 'fen') {
-      return { ...base, fen: opts.fen.trim() };
-    }
 
     // For moves/PGN: include BOTH the array and a string version of the SAN sequence.
     const sanList = review.sans || [];
@@ -325,10 +411,11 @@ export default function ManualAddPage() {
     setErr(null);
     setSaved(false);
 
-    if (!moves.trim() && !pgn.trim() && !fen.trim()) {
-      setErr('Enter Moves, PGN, or FEN.');
-      return;
-    }
+    const movesTrim = moves.trim();
+    const pgnTrim = pgn.trim();
+    if (inputKind === 'moves' && !movesTrim) { setErr(MOVES_HINT); return; }
+    if (inputKind === 'pgn' && !pgnTrim) { setErr(PGN_HINT); return; }
+    if (!movesTrim && !pgnTrim) { setErr('Enter Moves or PGN.'); return; }
 
     const review = computeReviewFromInput();
     if (!review.ok) { setErr(review.reason || 'Invalid input'); return; }
@@ -344,19 +431,19 @@ export default function ManualAddPage() {
     const argsSkip = buildCardgenArgsForInput(inputKind, review, {
       duplicateStrategy: 'skip',
       acc, moac, depth,
-      pgn, fen,
+      pgn,
     });
 
     const argsOverwrite = buildCardgenArgsForInput(inputKind, review, {
       duplicateStrategy: 'overwrite',
       acc, moac, depth,
-      pgn, fen,
+      pgn,
     });
 
     const argsKeepBoth = buildCardgenArgsForInput(inputKind, review, {
       duplicateStrategy: 'keep-both',
       acc, moac, depth,
-      pgn, fen,
+      pgn,
     });
 
     if (dup) {
@@ -723,12 +810,11 @@ export default function ManualAddPage() {
               <div>Input</div>
               <select
                 value={inputKind}
-                onChange={e => setInputKind(e.currentTarget.value as any)}
+                onChange={e => handleInputKindChange(e.currentTarget.value as any)}
                 style={{ background: '#fff', color: '#000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 10px' }}
               >
                 <option value="moves">Moves</option>
                 <option value="pgn">PGN</option>
-                <option value="fen">FEN</option>
               </select>
             </div>
 
@@ -756,19 +842,6 @@ export default function ManualAddPage() {
                 />
               </div>
             )}
-            {inputKind === 'fen' && (
-              <div className="row" style={{ display: 'grid', gridTemplateColumns: `${LABEL_COL}px 1fr`, gap: 12, alignItems: 'center' }}>
-                <div>FEN</div>
-                <input
-                  type="text"
-                  value={fen}
-                  onChange={e => setFen(e.currentTarget.value)}
-                  placeholder='rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
-                  style={{ background: '#fff', color: '#000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px' }}
-                />
-              </div>
-            )}
-
             {/* Card Creation (defaults from Settings) */}
             <div style={{ fontWeight: 600, fontSize: 18, opacity: 0.95, marginTop: 6 }}>Card Creation</div>
 

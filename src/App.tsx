@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
 import DecksPage from './pages/DecksPage';
 import ReviewPage from './pages/ReviewPage';
 import SettingsPage from './pages/SettingsPage';
@@ -14,10 +14,9 @@ import CollectionPage from './pages/CollectionPage';
 import ManualAddPage from './pages/ManualAddPage';
 import EditCardPage from './pages/EditCardPage'; // <-- NEW
 import ManageDeckPage from './pages/ManageDeckPage';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSettings } from './state/settings';
-import { replaceCards } from './data/cardStore';
+import { useEffect, useRef, useState } from 'react';
 import ForcedAnswersPage from './pages/ForcedAnswersPage';
+import AutoAddPage from './pages/AutoAddPage';
 
 declare global {
   interface Window {
@@ -33,47 +32,32 @@ declare global {
 
 function Header() {
   const location = useLocation();
-  const { settings } = useSettings();
-  const [showAuto, setShowAuto] = useState(false);
-  const [progress, setProgress] = useState<{ phase?: string; index?: number; total?: number; url?: string } | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-  const cleanupRef = useRef<{ offProg?: () => void; offDone?: () => void }>({});
+  const navigate = useNavigate();
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const addMenuRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!addMenuOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (!addMenuRef.current) return;
+      const target = e.target as Node | null;
+      if (target && addMenuRef.current.contains(target)) return;
+      setAddMenuOpen(false);
+    };
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setAddMenuOpen(false);
+    };
+    window.addEventListener('mousedown', handleClick);
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      window.removeEventListener('mousedown', handleClick);
+      window.removeEventListener('keydown', handleKey);
+    };
+  }, [addMenuOpen]);
 
   const handleAutoAdd = () => {
-    if (!settings.chessComUser) {
-      setStatus('Set Chess.com username in Settings first.');
-      setShowAuto(true);
-      return;
-    }
-    setStatus(null);
-    setProgress(null);
-    setShowAuto(true);
-    setBusy(true);
-    try {
-      // Subscribe to progress/done events
-      cleanupRef.current.offProg = window.autogen?.onProgress?.((p: { phase?: string; index?: number; total?: number; url?: string }) => {
-        try { console.log('[AutoAdd] progress', p); } catch {}
-        setProgress(p || null);
-      }) || undefined;
-      cleanupRef.current.offDone = window.autogen?.onDone?.(async (res: { ok?: boolean; message?: string; scanned?: number; created?: number; cancelled?: boolean }) => {
-        try { console.log('[AutoAdd] done', res); } catch {}
-        setBusy(false);
-        setStatus(res?.message || (res?.ok ? 'Done.' : 'Finished'));
-        // Reload cards.json from disk into in-memory store
-        try {
-          const arr = await (window as any).cards?.readAll?.();
-          if (arr) replaceCards(arr as any);
-        } catch {}
-      }) || undefined;
-
-      // Limit to recent 5 games for testing
-      try { console.log('[AutoAdd] start', { user: settings.chessComUser, limit: 5 }); } catch {}
-      void window.autogen?.scanChessCom?.({ username: settings.chessComUser, limit: 5 });
-    } catch (e) {
-      setBusy(false);
-      setStatus((e as any)?.message || 'Failed to start scan.');
-    }
+    setAddMenuOpen(false);
+    navigate('/auto-add');
   };
 
   const linkStyle = { textDecoration: 'none' as const };
@@ -92,76 +76,40 @@ function Header() {
         <Link to="/" className="button secondary" style={linkStyle}>Home</Link>
         <Link to="/stats" className="button secondary" style={linkStyle}>Stats</Link>
         <Link to="/collection" className="button secondary" style={linkStyle}>Collection</Link>
-        <Link
-          to={location.pathname || '/'}
-          onClick={(e) => { e.preventDefault(); handleAutoAdd(); }}
-          className="button secondary" style={linkStyle}
-        >
-          Auto Add
-        </Link>
-        <Link to="/manual-add" className="button secondary" style={linkStyle}>Manual Add</Link>
-        <Link to="/settings" state={{ from: location }} className="button secondary" style={linkStyle}>Settings</Link>
-      </nav>
-    </header>
-    {showAuto && (
-      <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-        <div className="card" style={{ width: 520, maxWidth: '90%', padding: 18 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h3 style={{ margin: 0 }}>Auto Add from Chess.com</h3>
-            <button
-              className="button secondary"
-              onClick={async () => {
-                // Cancel ongoing scan if busy
-                if (busy) {
-                  try { console.log('[AutoAdd] cancel clicked'); window.autogen?.cancel?.(); } catch {}
-                }
-                // Always attempt a final reload of cards
-                try {
-                  const arr = await (window as any).cards?.readAll?.();
-                  if (arr) replaceCards(arr as any);
-                } catch {}
-                setBusy(false);
-                setShowAuto(false);
-                // Cleanup listeners
-                try { cleanupRef.current.offProg?.(); } catch {}
-                try { cleanupRef.current.offDone?.(); } catch {}
-              }}
-            >
-              {busy ? 'Cancel' : 'Close'}
-            </button>
-          </div>
-
-          <div style={{ marginTop: 14, marginBottom: 10, fontSize: 14 }}>
-            {status || (busy ? 'Scanning…' : 'Ready')}
-          </div>
-
-          {/* Progress bar */}
-          <div style={{ height: 10, background: 'var(--border)', borderRadius: 6, overflow: 'hidden', position: 'relative' }}>
-            {(() => {
-              const total = Math.max(1, progress?.total || 0);
-              const index = Math.min(total, (progress?.index || 0));
-              // Show progress of current item as well
-              const pct = total > 0 ? Math.round(((busy ? index : total) / total) * 100) : 0;
-              return (
-                <div style={{ width: `${pct}%`, height: '100%', background: 'var(--accent, #36f)' }} />
-              );
-            })()}
-          </div>
-
-          {progress?.url && (
-            <div style={{ marginTop: 8, fontSize: 12, opacity: 0.8 }}>
-              {progress?.url}
-            </div>
-          )}
-
-          {!settings.chessComUser && (
-            <div style={{ marginTop: 12, fontSize: 13, color: 'var(--danger, #d33)' }}>
-              Tip: set your Chess.com username in Settings first.
+        <div ref={addMenuRef} style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className="button secondary"
+            onClick={() => setAddMenuOpen(prev => !prev)}
+            aria-expanded={addMenuOpen}
+          >
+            <span>Add</span>
+            <span style={{ fontSize: 12, opacity: 0.8 }}>▾</span>
+          </button>
+          {addMenuOpen && (
+            <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', background: 'var(--panel)', border: '1px solid var(--border-strong)', borderRadius: 8, minWidth: 220, maxHeight: '40vh', overflowY: 'auto', boxShadow: '0 6px 16px rgba(0,0,0,0.25)', padding: 6, zIndex: 5 }}>
+              <button
+                type="button"
+                onClick={() => handleAutoAdd()}
+                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer' }}
+              >
+                <div style={{ fontWeight: 600 }}>Auto Add</div>
+                <div className="sub" style={{ marginTop: 2 }}>Scan recent games and add cards automatically</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAddMenuOpen(false); navigate('/manual-add'); }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', border: 'none', background: 'transparent', color: 'inherit', padding: '8px 10px', borderRadius: 6, cursor: 'pointer', marginTop: 6 }}
+              >
+                <div style={{ fontWeight: 600 }}>Manual Add</div>
+                <div className="sub" style={{ marginTop: 2 }}>Create a card by entering the position yourself</div>
+              </button>
             </div>
           )}
         </div>
-      </div>
-    )}
+        <Link to="/settings" state={{ from: location }} className="button secondary" style={linkStyle}>Settings</Link>
+      </nav>
+    </header>
     </>
   );
 }
@@ -302,6 +250,7 @@ export default function App() {
                 <Route path="/settings/forced-answers" element={<ForcedAnswersPage />} />
                 <Route path="/stats" element={<StatsPage />} />
                 <Route path="/collection" element={<CollectionPage />} />
+                <Route path="/auto-add" element={<AutoAddPage />} />
                 <Route path="/manual-add" element={<ManualAddPage />} />
                 <Route path="/edit/:cardId" element={<EditCardPage />} /> {/* NEW */}
                 <Route path="/manage/:deckId" element={<ManageDeckPage />} />

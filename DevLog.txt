@@ -101,10 +101,12 @@
     1 hour:
         add ability to duplicate a card in collection view
 1/12/26:
-    4 hours:
+    6 hours:
         In review, collection, and editor, add another navigation button with the arrows to skip to Review Position
             circle icon on button
             navigatable via space bar or enter
         On overwrite? pop up on add card, add option to keep both
         Ensure stockfish exists on Add Card
         Allow stockfish to be deterministic (force threads = 1 and hash = 1024)
+        Remove FEN as input from Manual Add (must use PGN or Moves)
+        Add Auto Add page

@@ -1,6 +1,8 @@
 add page for auto add instead of immediate start
     page shows status of run
-add feature to analyze games before auto-add and get player preferences
+Add more settings/filter to Auto Add page
+    add feature to analyze games before auto-add and get player preferences
+    limiting to specific openings
 add feature to just think (don't add) on manual stockfish assisted add
     also add better error details on Ivalid PGN on manual stockfish assisted add
     add eval to final terminal output

@@ -4,6 +4,8 @@ import { getSchedulerConfig, setSchedulerConfig, getPresets, SchedulerConfig } f
 import { useKeybinds, formatActionKeys } from '../context/KeybindsProvider';
 import { getSchedulingPrefs, setSchedulingPrefs, CardSchedulingPrefs } from '../state/schedulingPrefs';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import CardCreationSettingsSection from '../components/CardCreationSettingsSection';
+import ToggleSwitch from '../components/ToggleSwitch';
 
 type CardgenConfig = {
   otherAnswersAcceptance: number;
@@ -165,55 +167,6 @@ export default function SettingsPage() {
     return { daysFmt, g };
   })();
 
-  // ---- Helpers ----
-  const clampInt = (v: number, min: number, max?: number) => {
-    if (!Number.isFinite(v)) return min;
-    v = Math.floor(v);
-    if (v < min) v = min;
-    if (typeof max === 'number' && v > max) v = max;
-    return v;
-  };
-
-  // ---- Other Answers Acceptance (0.01 step, 2 decimals, custom stepper) ----
-  const setAcceptance = (next: number) => {
-    if (!Number.isFinite(next) || next < 0) next = 0;
-    const rounded = Math.round(next * 100) / 100;
-    update({ otherAnswersAcceptance: rounded });
-  };
-  const acceptance = Number(settings.otherAnswersAcceptance ?? 0);
-  const acceptanceStr = acceptance.toFixed(2);
-  const STEP_ACC = 0.01;
-  const incAcc = () => setAcceptance(acceptance + STEP_ACC);
-  const decAcc = () => setAcceptance(acceptance - STEP_ACC);
-  const onAccKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === 'ArrowUp') { e.preventDefault(); incAcc(); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); decAcc(); }
-  };
-
-  // ---- Max Other Answer Count (int, step 1, custom stepper) ----
-  const moac = settings.maxOtherAnswerCount;
-  const setMoac = (next: number) => {
-    update({ maxOtherAnswerCount: clampInt(next, 0, 50) });
-  };
-  const incMoac = () => setMoac(moac + 1);
-  const decMoac = () => setMoac(moac - 1);
-  const onMoacKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === 'ArrowUp') { e.preventDefault(); incMoac(); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); decMoac(); }
-  };
-
-  // ---- Depth (int, step 1, custom stepper) ----
-  const depth = settings.stockfishDepth;
-  const setDepth = (next: number) => {
-    update({ stockfishDepth: clampInt(next, 1, 99) });
-  };
-  const incDepth = () => setDepth(depth + 1);
-  const decDepth = () => setDepth(depth - 1);
-  const onDepthKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
-    if (e.key === 'ArrowUp') { e.preventDefault(); incDepth(); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); decDepth(); }
-  };
-
   return (
     <div className="container">
       <div className="card grid">
@@ -229,29 +182,39 @@ export default function SettingsPage() {
             <div className="sub" style={{ marginBottom: 8 }}>Link accounts to enable Auto Add and future integrations.</div>
 
             {/* Chess.com username */}
-            <div className="row" title="Used by Auto Add to scan your games" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
-              <div>Chess.com Username</div>
+            <div className="row" title="Used by Auto Add to scan your games" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content max-content', gap: 12, alignItems: 'center' }}>
+              <div style={{ color: settings.chessComEnabled ? 'inherit' : 'var(--muted)' }}>Chess.com Username</div>
               <div className="sub">Optional; used by Auto Add</div>
               <input
                 type="text"
                 value={settings.chessComUser || ''}
                 onChange={e => update({ chessComUser: e.currentTarget.value })}
-                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', justifySelf: 'end', minWidth: 180 }}
+                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', justifySelf: 'end', minWidth: 180, opacity: settings.chessComEnabled ? 1 : 0.5 }}
                 placeholder="username"
+                disabled={!settings.chessComEnabled}
               />
+              <div style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)' }}>
+                <span className="sub">Scan</span>
+                <ToggleSwitch checked={!!settings.chessComEnabled} onChange={(next) => update({ chessComEnabled: next })} />
+              </div>
             </div>
 
             {/* Lichess username */}
-            <div className="row" title="Reserved for future auto-add support" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
-              <div>Lichess Username</div>
+            <div className="row" title="Reserved for future auto-add support" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content max-content', gap: 12, alignItems: 'center' }}>
+              <div style={{ color: settings.lichessEnabled ? 'inherit' : 'var(--muted)' }}>Lichess Username</div>
               <div className="sub">Optional</div>
               <input
                 type="text"
                 value={settings.lichessUser || ''}
                 onChange={e => update({ lichessUser: e.currentTarget.value })}
-                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', justifySelf: 'end', minWidth: 180 }}
+                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', justifySelf: 'end', minWidth: 180, opacity: settings.lichessEnabled ? 1 : 0.5 }}
                 placeholder="username"
+                disabled={!settings.lichessEnabled}
               />
+              <div style={{ justifySelf: 'end', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--muted)' }}>
+                <span className="sub">Scan</span>
+                <ToggleSwitch checked={!!settings.lichessEnabled} onChange={(next) => update({ lichessEnabled: next })} />
+              </div>
             </div>
 
             {/* (moved) Keybinds now lives in Preferences section */}
@@ -331,64 +294,7 @@ export default function SettingsPage() {
           <div style={{ fontWeight: 700, marginBottom: 6 }}>Card Creation</div>
           <div className="sub" style={{ marginBottom: 8 }}>Defaults used when analyzing games and creating cards.</div>
 
-          {/* Other Answers Acceptance */}
-          <div className="row" title="Accept alternative moves within this pawn value of the best move" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
-            <div>Other Answers Acceptance</div>
-            <div className="sub">Centipawn threshold</div>
-            <div className="num-wrap" style={{ justifySelf: 'end' }}>
-              <input
-                className="num-accept no-native-spin"
-                type="text"
-                inputMode="decimal"
-                value={acceptanceStr}
-                onChange={e => { const num = parseFloat(e.currentTarget.value); setAcceptance(num); }}
-                onKeyDown={onAccKeyDown}
-                onBlur={(e) => { const num = parseFloat(e.currentTarget.value); setAcceptance(num); }}
-                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', width: 60, minWidth: 'unset', maxWidth: 60, display: 'inline-block', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
-                title="e.g., 0.20 = 20 centipawns"
-              />
-              <div className="num-stepper" aria-hidden="false">
-                <button type="button" className="step up" onClick={incAcc} title="Increase by 0.01" aria-label="Increase">▲</button>
-                <button type="button" className="step down" onClick={decAcc} title="Decrease by 0.01" aria-label="Decrease">▼</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Max Other Answer Count */}
-          <div className="row" title="Number of alternative moves to keep when creating cards" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
-            <div>Max Other Answer Count</div>
-            <div className="sub">MultiPV alternatives</div>
-            <div className="num-wrap" style={{ justifySelf: 'end' }}>
-              <input className="no-native-spin" type="text" inputMode="numeric" value={String(moac)}
-                onChange={e => setMoac(parseInt(e.currentTarget.value, 10))}
-                onKeyDown={onMoacKeyDown}
-                onBlur={e => setMoac(parseInt(e.currentTarget.value, 10))}
-                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', width: 70, minWidth: 'unset', maxWidth: 80, display: 'inline-block', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace' }}
-              />
-              <div className="num-stepper" aria-hidden="false">
-                <button type="button" className="step up" onClick={incMoac} title="Increase by 1" aria-label="Increase">▲</button>
-                <button type="button" className="step down" onClick={decMoac} title="Decrease by 1" aria-label="Decrease">▼</button>
-              </div>
-            </div>
-          </div>
-
-          {/* Engine Depth */}
-          <div className="row" title="Engine search depth (higher = stronger & slower)" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>
-            <div>Engine Depth</div>
-            <div className="sub">Stockfish depth</div>
-            <div className="num-wrap" style={{ justifySelf: 'end' }}>
-              <input className="no-native-spin" type="text" inputMode="numeric" value={String(depth)}
-                onChange={e => setDepth(parseInt(e.currentTarget.value, 10))}
-                onKeyDown={onDepthKeyDown}
-                onBlur={e => setDepth(parseInt(e.currentTarget.value, 10))}
-                style={{ backgroundColor: '#ffffff', color: '#000000', border: '1px solid var(--border-strong)', borderRadius: 8, padding: '6px 8px', width: 70, minWidth: 'unset', maxWidth: 80, display: 'inline-block', textAlign: 'right', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
-              />
-              <div className="num-stepper" aria-hidden="false">
-                <button type="button" className="step up" onClick={incDepth} title="Increase by 1" aria-label="Increase">▲</button>
-                <button type="button" className="step down" onClick={decDepth} title="Decrease by 1" aria-label="Decrease">▼</button>
-              </div>
-            </div>
-          </div>
+          <CardCreationSettingsSection settings={settings} update={update} />
 
           {/* Forced Answers (moved here) */}
           <div className="row" title="Override engine-best answers per position (per-FEN forced moves)" style={{ display: 'grid', gridTemplateColumns: '220px 1fr max-content', gap: 12, alignItems: 'center' }}>

@@ -29,7 +29,8 @@ declare global {
     };
 
     autogen?: {
-      scanChessCom: (opts: { username?: string; limit?: number }) => Promise<{ ok: boolean; message?: string; scanned?: number; created?: number; cancelled?: boolean }>;
+      scanChessCom: (opts: { username?: string; limit?: number; fromDate?: string; toDate?: string }) => Promise<{ ok: boolean; message?: string; scanned?: number; created?: number; cancelled?: boolean }>;
+      scanLichess?: (opts: { username?: string; limit?: number; fromDate?: string; toDate?: string }) => Promise<{ ok: boolean; message?: string; scanned?: number; created?: number; cancelled?: boolean }>;
       cancel: () => void;
       onProgress: (cb: (p: { phase?: string; index?: number; total?: number; url?: string }) => void) => () => void;
       onDone: (cb: (r: { ok?: boolean; message?: string; scanned?: number; created?: number; cancelled?: boolean }) => void) => () => void;
