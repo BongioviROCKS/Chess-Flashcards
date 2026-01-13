@@ -30,7 +30,10 @@
         "engineBest": {"move": "e5", "eval": {"kind": "cp", "value": -20, "depth": 35}},
         "forced": {"move": "e5"},
         "enginePath": "engines/win-x64/stockfish17.1.exe"
-      }
+      },
+      "children": [
+        "c_1768263968878_ps28"
+      ]
     },
     "due": "2025-09-17T22:59:02.986Z"
   },
@@ -282,6 +285,348 @@
         "forced": null,
         "enginePath": "engines/win-x64/stockfish17.1.exe"
       }
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263957816_pf9h",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "",
+      "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+      "answer": "e4",
+      "answerFen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+      "eval": {"kind": "cp", "value": 32, "depth": 20},
+      "exampleLine": ["e4", "c5", "Nf3", "Nc6", "d4", "cxd4", "Nxd4", "e5", "Nb5", "d6", "N1c3", "a6", "Na3", "b5", "Nd5", "Nce7", "c4", "Nxd5", "exd5", "bxc4", "Be2", "Be7"],
+      "otherAnswers": [
+        {"move": "d4", "eval": {"kind": "cp", "value": 24, "depth": 20}},
+        {"move": "Nf3", "eval": {"kind": "cp", "value": 22, "depth": 20}},
+        {"move": "e3", "eval": {"kind": "cp", "value": 14, "depth": 20}}
+      ],
+      "depth": 1,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:25:57.815Z",
+        "input": {"movesSAN": [], "pgn": "", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 2295,
+        "engineBest": {"move": "e4", "eval": {"kind": "cp", "value": 32, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "children": [
+        "c_1768263960915_xsei",
+        "c_1768263964991_zidg",
+        "c_1768263990025_k16x"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263960915_xsei",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e6",
+      "fen": "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "answer": "Nc3",
+      "answerFen": "rnbqkbnr/pppp1ppp/4p3/8/4P3/2N5/PPPP1PPP/R1BQKBNR b KQkq - 1 2",
+      "eval": {"kind": "cp", "value": 39, "depth": 20},
+      "exampleLine": ["Nc3", "d5", "d4", "Nf6", "e5", "Nfd7", "f4", "c5", "Nf3", "cxd4", "Nb5", "Qa5+", "Bd2", "Qb6", "Nbxd4", "Nc5", "c3", "Ne4", "Bd3", "Nc6", "Bxe4"],
+      "otherAnswers": [
+        {"move": "d4", "eval": {"kind": "cp", "value": 36, "depth": 20}},
+        {"move": "Nf3", "eval": {"kind": "cp", "value": 24, "depth": 20}},
+        {"move": "c3", "eval": {"kind": "cp", "value": 14, "depth": 20}}
+      ],
+      "depth": 2,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:00.913Z",
+        "input": {"movesSAN": ["e4", "e6"], "pgn": "", "fen": "rnbqkbnr/pppp1ppp/4p3/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 2700,
+        "engineBest": {"move": "Nc3", "eval": {"kind": "cp", "value": 39, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1768263957816_pf9h"
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263964991_zidg",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 c5",
+      "fen": "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "answer": "Nf3",
+      "answerFen": "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",
+      "eval": {"kind": "cp", "value": 35, "depth": 20},
+      "exampleLine": ["Nf3", "Nc6", "Bb5", "g6", "O-O", "Bg7", "c3", "e5", "d4", "exd4", "cxd4", "cxd4", "Bf4", "Nge7", "Bd6", "O-O", "Nbd2"],
+      "otherAnswers": [
+        {"move": "Nc3", "eval": {"kind": "cp", "value": 29, "depth": 20}},
+        {"move": "c3", "eval": {"kind": "cp", "value": 26, "depth": 20}},
+        {"move": "Ne2", "eval": {"kind": "cp", "value": 25, "depth": 20}}
+      ],
+      "depth": 2,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:04.989Z",
+        "input": {"movesSAN": ["e4", "c5"], "pgn": "", "fen": "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 3571,
+        "engineBest": {"move": "Nf3", "eval": {"kind": "cp", "value": 35, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1768263957816_pf9h"
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263968878_ps28",
+    "deck": "black-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 Bc4",
+      "fen": "rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2",
+      "answer": "Nf6",
+      "answerFen": "rnbqkb1r/pppp1ppp/5n2/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR w KQkq - 2 3",
+      "eval": {"kind": "cp", "value": -3, "depth": 20},
+      "exampleLine": ["Nf6", "d3", "c6", "Nf3", "d5", "Bb3", "a5", "a4", "Bb4+", "c3", "Bd6", "Bg5", "Be6", "Bh4", "Nbd7", "exd5", "cxd5", "O-O", "O-O", "Na3", "h6"],
+      "otherAnswers": [
+        {"move": "Nc6", "eval": {"kind": "cp", "value": -13, "depth": 20}},
+        {"move": "Bc5", "eval": {"kind": "cp", "value": -13, "depth": 20}},
+        {"move": "c6", "eval": {"kind": "cp", "value": -33, "depth": 20}}
+      ],
+      "depth": 2,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:08.877Z",
+        "input": {"movesSAN": ["e4", "e5", "Bc4"], "pgn": "", "fen": "rnbqkbnr/pppp1ppp/8/4p3/2B1P3/8/PPPP1PPP/RNBQK1NR b KQkq - 1 2"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 3404,
+        "engineBest": {"move": "Nf6", "eval": {"kind": "cp", "value": -3, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1757244400021_ukcu",
+      "children": [
+        "c_1768263972285_2y1r"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263972285_2y1r",
+    "deck": "black-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 Bc4 Nf6 d3",
+      "fen": "rnbqkb1r/pppp1ppp/5n2/4p3/2B1P3/3P4/PPP2PPP/RNBQK1NR b KQkq - 0 3",
+      "answer": "c6",
+      "answerFen": "rnbqkb1r/pp1p1ppp/2p2n2/4p3/2B1P3/3P4/PPP2PPP/RNBQK1NR w KQkq - 0 4",
+      "eval": {"kind": "cp", "value": -1, "depth": 20},
+      "exampleLine": ["c6", "Nf3", "d5", "Bb3", "a5", "a4", "Bb4+", "c3", "Bd6", "O-O", "O-O", "Bg5", "dxe4", "dxe4", "h6", "Bh4", "Bc7", "Nbd2", "Qe7", "Re1", "Rd8", "Qe2", "Be6", "Bxe6", "Qxe6", "Nc4"],
+      "otherAnswers": [
+        {"move": "Bc5", "eval": {"kind": "cp", "value": -18, "depth": 20}},
+        {"move": "Nc6", "eval": {"kind": "cp", "value": -21, "depth": 20}},
+        {"move": "Be7", "eval": {"kind": "cp", "value": -25, "depth": 20}}
+      ],
+      "depth": 3,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:12.283Z",
+        "input": {"movesSAN": ["e4", "e5", "Bc4", "Nf6", "d3"], "pgn": "", "fen": "rnbqkb1r/pppp1ppp/5n2/4p3/2B1P3/3P4/PPP2PPP/RNBQK1NR b KQkq - 0 3"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 2984,
+        "engineBest": {"move": "c6", "eval": {"kind": "cp", "value": -1, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1768263968878_ps28",
+      "children": [
+        "c_1768263975852_yfl8"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263975852_yfl8",
+    "deck": "black-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 Bc4 Nf6 d3 c6 f4",
+      "fen": "rnbqkb1r/pp1p1ppp/2p2n2/4p3/2B1PP2/3P4/PPP3PP/RNBQK1NR b KQkq - 0 4",
+      "answer": "exf4",
+      "answerFen": "rnbqkb1r/pp1p1ppp/2p2n2/8/2B1Pp2/3P4/PPP3PP/RNBQK1NR w KQkq - 0 5",
+      "eval": {"kind": "cp", "value": 32, "depth": 20},
+      "exampleLine": ["exf4", "Bxf4", "d5", "exd5", "cxd5", "Bb3", "Nc6", "Ne2", "Bg4", "h3", "Bh5", "O-O", "Bc5+", "Kh1", "O-O", "Nbc3", "Nd4", "Be5", "Nxe2", "Nxe2", "Qe8", "d4", "Bxe2", "Qxe2", "Bxd4", "Rxf6", "Bxe5", "Rf3", "Bxb2", "Qxe8", "Rfxe8", "Rb1"],
+      "otherAnswers": [
+        {"move": "d5", "eval": {"kind": "cp", "value": 31, "depth": 20}}
+      ],
+      "depth": 4,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:15.851Z",
+        "input": {"movesSAN": ["e4", "e5", "Bc4", "Nf6", "d3", "c6", "f4"], "pgn": "", "fen": "rnbqkb1r/pp1p1ppp/2p2n2/4p3/2B1PP2/3P4/PPP3PP/RNBQK1NR b KQkq - 0 4"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 3209,
+        "engineBest": {"move": "exf4", "eval": {"kind": "cp", "value": 32, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1768263972285_2y1r"
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263979529_y8lr",
+    "deck": "black-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "Nc3",
+      "fen": "rnbqkbnr/pppppppp/8/8/8/2N5/PPPPPPPP/R1BQKBNR b KQkq - 1 1",
+      "answer": "d5",
+      "answerFen": "rnbqkbnr/ppp1pppp/8/3p4/8/2N5/PPPPPPPP/R1BQKBNR w KQkq - 0 2",
+      "eval": {"kind": "cp", "value": 15, "depth": 20},
+      "exampleLine": ["d5", "d4", "Nf6", "Bf4", "a6", "e3", "e6", "Nf3", "c5", "Be2", "b5", "O-O", "Bb7", "a4", "b4", "Nb1", "c4", "Ne5", "Be7"],
+      "otherAnswers": [
+        {"move": "Nf6", "eval": {"kind": "cp", "value": -1, "depth": 20}},
+        {"move": "e5", "eval": {"kind": "cp", "value": -8, "depth": 20}},
+        {"move": "c6", "eval": {"kind": "cp", "value": -24, "depth": 20}}
+      ],
+      "depth": 1,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:19.528Z",
+        "input": {"movesSAN": ["Nc3"], "pgn": "", "fen": "rnbqkbnr/pppppppp/8/8/8/2N5/PPPPPPPP/R1BQKBNR b KQkq - 1 1"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 3208,
+        "engineBest": {"move": "d5", "eval": {"kind": "cp", "value": 15, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "children": [
+        "c_1768263982735_1bd0"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263982735_1bd0",
+    "deck": "black-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "Nc3 d5 e3",
+      "fen": "rnbqkbnr/ppp1pppp/8/3p4/8/2N1P3/PPPP1PPP/R1BQKBNR b KQkq - 0 2",
+      "answer": "e5",
+      "answerFen": "rnbqkbnr/ppp2ppp/8/3pp3/8/2N1P3/PPPP1PPP/R1BQKBNR w KQkq - 0 3",
+      "eval": {"kind": "cp", "value": 28, "depth": 20},
+      "exampleLine": ["e5", "Qh5", "Nf6", "Qxe5+", "Be7", "Nb5", "Na6", "Nd4", "Ng4", "Qf4", "Bd6", "Qf3", "O-O", "Bxa6", "bxa6", "h3", "Ne5", "Qd1", "c5", "Ndf3", "Rb8", "Nxe5", "Bxe5", "Nf3", "Bxb2", "Rb1"],
+      "otherAnswers": [
+        {"move": "Nf6", "eval": {"kind": "cp", "value": 20, "depth": 20}},
+        {"move": "e6", "eval": {"kind": "cp", "value": 18, "depth": 20}},
+        {"move": "c5", "eval": {"kind": "cp", "value": 15, "depth": 20}}
+      ],
+      "depth": 2,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:22.733Z",
+        "input": {"movesSAN": ["Nc3", "d5", "e3"], "pgn": "", "fen": "rnbqkbnr/ppp1pppp/8/3p4/8/2N1P3/PPPP1PPP/R1BQKBNR b KQkq - 0 2"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 2848,
+        "engineBest": {"move": "e5", "eval": {"kind": "cp", "value": 28, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1768263979529_y8lr",
+      "children": [
+        "c_1768263986747_p7ki"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263986747_p7ki",
+    "deck": "black-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "Nc3 d5 e3 e5 d4",
+      "fen": "rnbqkbnr/ppp2ppp/8/3pp3/3P4/2N1P3/PPP2PPP/R1BQKBNR b KQkq - 0 3",
+      "answer": "e4",
+      "answerFen": "rnbqkbnr/ppp2ppp/8/3p4/3Pp3/2N1P3/PPP2PPP/R1BQKBNR w KQkq - 0 4",
+      "eval": {"kind": "cp", "value": 37, "depth": 20},
+      "exampleLine": ["e4", "f3", "Nf6", "fxe4", "Nxe4", "Nxe4", "dxe4", "Bd2", "Nd7", "Nh3", "Nf6", "Nf2", "Bd6", "c4", "c5", "dxc5", "Bxc5", "b4", "Bd6"],
+      "otherAnswers": [
+        {"move": "exd4", "eval": {"kind": "cp", "value": -7, "depth": 20}}
+      ],
+      "depth": 3,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:26.746Z",
+        "input": {"movesSAN": ["Nc3", "d5", "e3", "e5", "d4"], "pgn": "", "fen": "rnbqkbnr/ppp2ppp/8/3pp3/3P4/2N1P3/PPP2PPP/R1BQKBNR b KQkq - 0 3"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 3631,
+        "engineBest": {"move": "e4", "eval": {"kind": "cp", "value": 37, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1768263982735_1bd0"
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263990025_k16x",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 d5",
+      "fen": "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2",
+      "answer": "exd5",
+      "answerFen": "rnbqkbnr/ppp1pppp/8/3P4/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2",
+      "eval": {"kind": "cp", "value": 64, "depth": 20},
+      "exampleLine": ["exd5", "Nf6", "Nf3", "Nxd5", "d4", "Bf5", "Bd3", "Bxd3", "Qxd3", "e6", "c4", "Nf6", "Nc3", "c6", "O-O", "Be7", "Bf4", "Nh5", "Be3", "O-O", "h3", "Re8", "Rad1", "Nf6", "a3", "Nbd7"],
+      "otherAnswers": [
+        {"move": "e5", "eval": {"kind": "cp", "value": 8, "depth": 20}}
+      ],
+      "depth": 2,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:30.024Z",
+        "input": {"movesSAN": ["e4", "d5"], "pgn": "", "fen": "rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 2"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 2755,
+        "engineBest": {"move": "exd5", "eval": {"kind": "cp", "value": 64, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1768263957816_pf9h",
+      "children": [
+        "c_1768263993128_cqx8"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1768263993128_cqx8",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 d5 exd5 Nf6",
+      "fen": "rnbqkb1r/ppp1pppp/5n2/3P4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 1 3",
+      "answer": "Bb5+",
+      "answerFen": "rnbqkb1r/ppp1pppp/5n2/1B1P4/8/8/PPPP1PPP/RNBQK1NR b KQkq - 2 3",
+      "eval": {"kind": "cp", "value": 61, "depth": 20},
+      "exampleLine": ["Bb5+", "Nbd7", "Nf3", "Nxd5", "d4", "e6", "c4", "Bb4+", "Bd2", "Bxd2+", "Qxd2", "Ne7", "Nc3", "O-O", "Ba4", "b6", "O-O-O", "Bb7", "d5", "exd5"],
+      "otherAnswers": [
+        {"move": "Nf3", "eval": {"kind": "cp", "value": 56, "depth": 20}},
+        {"move": "d4", "eval": {"kind": "cp", "value": 56, "depth": 20}},
+        {"move": "Be2", "eval": {"kind": "cp", "value": 43, "depth": 20}}
+      ],
+      "depth": 3,
+      "creationCriteria": {
+        "createdAt": "2026-01-13T00:26:33.127Z",
+        "input": {"movesSAN": ["e4", "d5", "exd5", "Nf6"], "pgn": "", "fen": "rnbqkb1r/ppp1pppp/5n2/3P4/8/8/PPPP1PPP/RNBQKBNR w KQkq - 1 3"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 3, "depth": 20, "threads": 1, "hash": 1024, "multipv": 4, "acceptanceCpWindow": 50},
+        "engineTimeMs": 2753,
+        "engineBest": {"move": "Bb5+", "eval": {"kind": "cp", "value": 61, "depth": 20}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1768263990025_k16x"
     },
     "due": "new"
   }

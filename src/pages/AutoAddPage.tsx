@@ -238,11 +238,11 @@ export default function AutoAddPage() {
         <div className="section" style={{ display: 'grid', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
-              <div style={{ fontWeight: 700 }}>Auto Add</div>
+              <div style={{ fontWeight: 700 }}>Auto Add Status</div>
               <div className="sub" style={{ marginTop: 2 }}>{status || 'Ready to scan.'}</div>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button className="button secondary" onClick={startScan} disabled={busy}>Start</button>
+              {!busy && <button className="button secondary" onClick={startScan}>Start</button>}
               {busy && <button className="button secondary" onClick={cancelScan}>Cancel</button>}
             </div>
           </div>

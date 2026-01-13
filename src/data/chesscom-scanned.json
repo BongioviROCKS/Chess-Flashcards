@@ -1,8 +1,13 @@
 {
   "chesscom:bongiovirocks": {
     "games": {
-      "https://www.chess.com/game/live/147904941968": true
+      "https://www.chess.com/game/live/147904941968": true,
+      "https://www.chess.com/game/live/147933807704": true,
+      "https://www.chess.com/game/live/147930770092": true,
+      "https://www.chess.com/game/live/147930459072": true,
+      "https://www.chess.com/game/live/147927740210": true,
+      "https://www.chess.com/game/live/147925318896": true
     },
-    "lastScan": "2026-01-12T14:37:26.094Z"
+    "lastScan": "2026-01-13T00:26:33.252Z"
   }
 }
