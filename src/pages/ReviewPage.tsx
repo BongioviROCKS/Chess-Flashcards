@@ -11,8 +11,7 @@ import { useReviewKeybinds } from '../hooks/useReviewKeybinds';
 import { pushReviewUndoStep, undoLast, canUndo } from '../state/reviewHistory';
 import { schedule, getMeta, restore as restoreSchedule } from '../state/scheduler';
 import { useBackKeybind } from '../hooks/useBackKeybind';
-
-const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+import { ensureFullFen, fenKey, START_FEN } from '../utils/fen';
 
 function pgnToSanArray(pgn: string): string[] {
   if (!pgn?.trim()) return [];
@@ -109,6 +108,8 @@ export default function ReviewPage() {
   // Build BACK frames & lastMoves
   const backFramesInfo = useMemo((): { frames: string[]; startIndex: number; moves: LastMove[] } => {
     if (!current) return { frames: [START_FEN], startIndex: 0, moves: [null] };
+    const reviewFenFull = ensureFullFen(current.fields.fen);
+    const reviewKey = fenKey(current.fields.fen);
 
     // 1) FRONT PGN frames (with move metadata)
     const frontSans = pgnToSanArray(current.fields.moveSequence);
@@ -121,9 +122,9 @@ export default function ReviewPage() {
       frontFrames.push(chessFront.fen());
       frontMoves.push({ from: mv.from, to: mv.to, san: mv.san });
     }
-    if (frontFrames[frontFrames.length - 1] !== current.fields.fen) {
+    if (frontFrames.findIndex(f => fenKey(f) === reviewKey) === -1) {
       // Ensure the review position is present
-      frontFrames.push(current.fields.fen);
+      frontFrames.push(reviewFenFull);
       frontMoves.push(null);
     }
 
@@ -132,7 +133,7 @@ export default function ReviewPage() {
     const pv = current.fields.exampleLine || [];
     const backSan = (pv.length && pv[0] === ans) ? pv : (ans ? [ans, ...pv] : pv);
 
-    const chessBack = new Chess(current.fields.fen);
+    const chessBack = new Chess(reviewFenFull);
     const answerAndBeyond: string[] = [];
     const answerMoves: LastMove[] = [];
     for (const san of backSan) {

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { Chess } from 'chess.js';
+import { ensureFullFen, START_FEN } from '../utils/fen';
 
 type Orientation = 'white' | 'black';
 
@@ -13,9 +14,6 @@ type BoardProps = {
   showCoordinates?: boolean;
 };
 
-/** fallback to start if FEN is bad */
-const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
-
 const PIECE_UNICODE: Record<string, string> = {
   // white
   K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙',
@@ -24,11 +22,12 @@ const PIECE_UNICODE: Record<string, string> = {
 };
 
 function safeFen(fen: string): string {
+  const full = ensureFullFen(fen);
   try {
     // Will throw if invalid
     // eslint-disable-next-line no-new
-    new Chess(fen);
-    return fen;
+    new Chess(full);
+    return full;
   } catch {
     return START_FEN;
   }

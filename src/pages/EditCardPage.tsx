@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useBackKeybind } from '../hooks/useBackKeybind';
 import { useKeybinds, formatActionKeys } from '../context/KeybindsProvider';
 import type { Card } from '../data/types';
+import { fenKey, normalizeCardFens } from '../utils/fen';
 
 declare global {
   interface Window {
@@ -76,9 +77,9 @@ function toDraft(c: Card): Draft {
     due: (c as any).due ?? '',
     fields: {
       moveSequence: c.fields.moveSequence || '',
-      fen: c.fields.fen || '',
+      fen: fenKey(c.fields.fen || ''),
       answer: c.fields.answer || '',
-      answerFen: c.fields.answerFen || '',
+      answerFen: fenKey(c.fields.answerFen || ''),
       evalKind: ((c.fields as any).eval?.kind ?? 'cp') as EvalKind,
       evalValue: String((c.fields as any).eval?.value ?? ''),
       evalDepth: String((c.fields as any).eval?.depth ?? ''),
@@ -181,9 +182,9 @@ export default function EditCardPage() {
         tags: lineToTags(draft.tags),
         fields: {
           moveSequence: draft.fields.moveSequence,
-          fen: draft.fields.fen,
+          fen: fenKey(draft.fields.fen),
           answer: draft.fields.answer,
-          answerFen: draft.fields.answerFen || undefined,
+          answerFen: draft.fields.answerFen ? fenKey(draft.fields.answerFen) : undefined,
           eval: evalField as any,
           exampleLine: lineToArr(draft.fields.exampleLine),
           otherAnswers: lineToArr(draft.fields.otherAnswers),
@@ -196,12 +197,13 @@ export default function EditCardPage() {
         ...(draft.due === '' ? {} : { due: draft.due as any }),
       };
 
-      const ok = (await window.cards?.update?.(updated)) ?? false;
+      const normalized = normalizeCardFens(updated);
+      const ok = (await window.cards?.update?.(normalized)) ?? false;
       if (!ok) throw new Error('Write failed');
 
       // Keep editor in sync
-      setCard(updated);
-      setDraft(toDraft(updated));
+      setCard(normalized);
+      setDraft(toDraft(normalized));
       setSaved(true);
 
       navigate(location.pathname, {

@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useBackKeybind } from '../hooks/useBackKeybind';
 import { useKeybinds, formatActionKeys } from '../context/KeybindsProvider';
 import { Chess } from 'chess.js';
+import { ensureFullFen, fenKey, normalizeCardFens } from '../utils/fen';
 
 type EvalKind = 'cp' | 'mate';
 
@@ -52,9 +53,9 @@ function toDraft(c: Card): Draft {
     due: (c as any).due ?? '',
     fields: {
       moveSequence: c.fields.moveSequence || '',
-      fen: c.fields.fen || '',
+      fen: fenKey(c.fields.fen || ''),
       answer: c.fields.answer || '',
-      answerFen: c.fields.answerFen || '',
+      answerFen: fenKey(c.fields.answerFen || ''),
       evalKind: ((c.fields as any).eval?.kind ?? 'cp') as EvalKind,
       evalValue: String((c.fields as any).eval?.value ?? ''),
       evalDepth: String((c.fields as any).eval?.depth ?? ''),
@@ -86,9 +87,9 @@ function fromDraft(d: Draft): Card {
     tags: lineToTags(d.tags),
     fields: {
       moveSequence: d.fields.moveSequence,
-      fen: d.fields.fen,
+      fen: fenKey(d.fields.fen),
       answer: d.fields.answer,
-      answerFen: d.fields.answerFen || undefined,
+      answerFen: d.fields.answerFen ? fenKey(d.fields.answerFen) : undefined,
       eval: evalField as any,
       exampleLine: lineToArr(d.fields.exampleLine),
       otherAnswers: lineToArr(d.fields.otherAnswers),
@@ -98,7 +99,7 @@ function fromDraft(d: Draft): Card {
     },
     ...(d.due === '' ? {} : { due: d.due as any }),
   };
-  return card;
+  return normalizeCardFens(card);
 }
 
 function generateCardId(): string {
@@ -114,7 +115,7 @@ function cloneCardForDuplicate(card: Card): Card {
     delete (clone.fields as any).descendants;
   }
   clone.due = 'new';
-  return clone;
+  return normalizeCardFens(clone);
 }
 
 function sideToMoveFromFen(fen?: string): 'w' | 'b' {
@@ -816,14 +817,16 @@ export default function CollectionPage() {
                         moves.push({ from: mv.from, to: mv.to, san: mv.san });
                       }
                       // Ensure review FEN is present
-                      let reviewIndex = frames.findIndex(f => f === selected.fields.fen);
+                      const reviewKey = fenKey(selected.fields.fen);
+                      const reviewFenFull = ensureFullFen(selected.fields.fen);
+                      let reviewIndex = frames.findIndex(f => fenKey(f) === reviewKey);
                       if (reviewIndex === -1) {
-                        frames.push(selected.fields.fen);
+                        frames.push(reviewFenFull);
                         moves.push(null);
                         reviewIndex = frames.length - 1;
                       }
                       // Append example line from review position
-                      const exChess = new Chess(selected.fields.fen);
+                      const exChess = new Chess(reviewFenFull);
                       for (const san of (selected.fields.exampleLine || [])) {
                         const mv = exChess.move(san);
                         if (!mv) break;

@@ -26,6 +26,31 @@ const SCANNED_PATH = path.resolve(ROOT, 'src', 'data', 'chesscom-scanned.json');
 const ANS_OVR_PATH = path.resolve(ROOT, 'src', 'data', 'answer-overrides.json');
 const DECK_LIMITS_PATH = path.resolve(ROOT, 'src', 'data', 'deckSettings.json');
 
+const fenKey4 = (fen) => {
+  try { return String(fen || '').split(/\s+/).slice(0, 4).join(' '); }
+  catch { return String(fen || ''); }
+};
+const normalizeCardFens = (card) => {
+  if (!card || typeof card !== 'object') return card;
+  const next = { ...card, fields: { ...(card.fields || {}) } };
+  const setIf = (obj, key) => {
+    if (obj && typeof obj[key] === 'string') obj[key] = fenKey4(obj[key]);
+  };
+  setIf(next.fields, 'fen');
+  setIf(next.fields, 'answerFen');
+  const cc = next.fields.creationCriteria;
+  if (cc && typeof cc === 'object') {
+    next.fields.creationCriteria = { ...cc };
+    const input = next.fields.creationCriteria.input;
+    if (input && typeof input === 'object') {
+      next.fields.creationCriteria.input = { ...input };
+      setIf(next.fields.creationCriteria.input, 'fen');
+    }
+  }
+  return next;
+};
+const normalizeCardsArray = (arr) => Array.isArray(arr) ? arr.map(normalizeCardFens) : [];
+
 // -------------------- Answer overrides helpers (moved up: used by IPC) --------------------
 function loadAnswerOverrides() {
   try {
@@ -143,8 +168,8 @@ function loadCardsArray() {
     const raw = fs.readFileSync(CARDS_PATH, 'utf-8').trim();
     if (raw === '') return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-    if (parsed && Array.isArray(parsed.cards)) return parsed.cards; // legacy
+    if (Array.isArray(parsed)) return normalizeCardsArray(parsed);
+    if (parsed && Array.isArray(parsed.cards)) return normalizeCardsArray(parsed.cards); // legacy
     return [];
   } catch (e) {
     console.error('[cards] load failed:', e);
@@ -162,8 +187,8 @@ function parseCardsJsonText(raw, label = 'cards.json') {
     const msg = err && err.message ? err.message : String(err);
     throw new Error(`Failed to parse ${label}: ${msg}`);
   }
-  if (Array.isArray(parsed)) return parsed;
-  if (parsed && typeof parsed === 'object' && Array.isArray(parsed.cards)) return parsed.cards;
+  if (Array.isArray(parsed)) return normalizeCardsArray(parsed);
+  if (parsed && typeof parsed === 'object' && Array.isArray(parsed.cards)) return normalizeCardsArray(parsed.cards);
   throw new Error('cards.json must be a JSON array or an object with a "cards" array.');
 }
 
@@ -214,8 +239,10 @@ function formatCardsJson(arr) {
 }
 function saveCardsArray(arr) {
   fs.mkdirSync(path.dirname(CARDS_PATH), { recursive: true });
-  const out = formatCardsJson(arr);
+  const normalized = normalizeCardsArray(arr);
+  const out = formatCardsJson(normalized);
   fs.writeFileSync(CARDS_PATH, out, 'utf-8');
+  return normalized;
 }
 
 function registerIpc() {
@@ -286,10 +313,15 @@ function registerIpc() {
   }
 
 
-  const findCardByFenDeck = (arr, fen, deckId) => arr.find(c => c?.fields?.fen === fen && c?.deck === deckId);
+  const findCardByFenDeck = (arr, fen, deckId) => arr.find(
+    (c) => c?.deck === deckId && fenKey4(c?.fields?.fen) === fenKey4(fen)
+  );
 
   // ---------- Make-card runner (packaging-safe) ----------
-  function runMakeCardWithMoves(movesSAN = [], { timeoutMs = 30000 } = {}) {
+  function runMakeCardWithMoves(movesSAN = [], { timeoutMs = 30000, shouldCancel } = {}) {
+    if (typeof shouldCancel === 'function' && shouldCancel()) {
+      return Promise.resolve({ ok: false, cancelled: true });
+    }
     // In packaged builds, call the exported API directly (no system Node dependency).
     if (!isDev) {
       return (async () => {
@@ -298,6 +330,9 @@ function registerIpc() {
           const mod = await import(pathToFileURL(script).href);
           if (typeof mod?.createCard !== 'function') {
             throw new Error('createCard export not found in make-card.js');
+          }
+          if (typeof shouldCancel === 'function' && shouldCancel()) {
+            return { ok: false, cancelled: true };
           }
           await mod.createCard({
             movesSAN,
@@ -350,11 +385,23 @@ function registerIpc() {
           try { child.kill(process.platform === 'win32' ? undefined : 'SIGKILL'); } catch {}
         }, timeoutMs);
 
+        const cancelTimer = setInterval(() => {
+          try {
+            if (typeof shouldCancel === 'function' && shouldCancel()) {
+              console.log('[scan] make-card cancel requested; killing child');
+              try { child.kill(process.platform === 'win32' ? undefined : 'SIGKILL'); } catch {}
+              cleanup({ ok: false, cancelled: true });
+            }
+          } catch {}
+        }, 150);
+
         child.once('close', (code) => {
           if (code === 0) console.log('[scan] make-card ok');
           else console.warn('[scan] make-card exited', code);
           cleanup({ ok: code === 0, stdout: out, code });
         });
+
+        child.once('close', () => { try { clearInterval(cancelTimer); } catch {} });
       } catch (e) {
         console.error('[scan] make-card spawn error', e);
         resolve({ ok: false, error: e });
@@ -374,7 +421,20 @@ function registerIpc() {
     return total || 1;
   }
 
-  async function scanOneGameForUser(game, usernameLC, onPosProgress /* (posIdx, posTotal) => void */) {
+  const forcedSanForPosition = (fen, forcedMap = {}) => {
+    try {
+      const entry = forcedMap[fenKey4(fen)] ?? forcedMap[fen];
+      const raw = typeof entry === 'string' ? entry : (entry && entry.move);
+      if (!raw) return '';
+      const c = new Chess(fen);
+      const mv = c.move(raw, { sloppy: true });
+      return mv ? mv.san : String(raw || '').trim();
+    } catch {
+      return '';
+    }
+  };
+
+  async function scanOneGameForUser(game, usernameLC, onPosProgress /* ({ posIdx, posTotal, fen, pathKey }) => void */, forcedMap = {}, shouldCancel = () => false) {
     const url = String(game?.url || '').trim();
     const pgn = String(game?.pgn || '').trim();
     if (!url || !pgn) return { skipped: true };
@@ -389,10 +449,12 @@ function registerIpc() {
     let created = 0;
     let posIdx = 0;
     const posTotal = countUserPositions(sans, userColor);
+    let cardsCache = loadCardsArray();
 
     console.log(`[scanGame] start url=${url} color=${userColor} plies=${sans.length} positions=${posTotal}`);
 
     while (i < sans.length) {
+      if (shouldCancel()) return { created, stopped: true, cancelled: true };
       const turn = chess.turn(); // 'w' or 'b'
       if (turn !== userColor) {
         // Not user's turn; advance one move from game if available
@@ -404,34 +466,40 @@ function registerIpc() {
 
       // User review position tick
       posIdx += 1;
-      try { onPosProgress?.(posIdx, posTotal); } catch {}
+      const fen = chess.fen();
+      const pathKey = chess.history().join(' ');
+      try { onPosProgress?.({ posIdx, posTotal, fen, pathKey }); } catch {}
 
       // Review position for user side
-      const fen = chess.fen();
       const deckId = (turn === 'w') ? 'white-other' : 'black-other';
 
-      // Ensure a card exists for this exact PGN path (create if missing)
-      let arr = loadCardsArray();
-      const pathKey = chess.history().join(' ');
-      let card = arr.find(c => c?.deck === deckId && (c?.fields?.moveSequence || '') === pathKey);
-      if (!card) {
+      // Check forced answers and existing cards before creating anything
+      const forced = forcedSanForPosition(fen, forcedMap);
+      const findCardForPos = () => {
+        const byPath = cardsCache.find(c => c?.deck === deckId && (c?.fields?.moveSequence || '') === pathKey);
+        if (byPath) return byPath;
+        return findCardByFenDeck(cardsCache, fen, deckId);
+      };
+      let card = findCardForPos();
+
+      // Create a card only when neither a forced answer nor an existing card is available
+      if (!forced && !card) {
         const historySans = chess.history(); // SAN[] up to this position
         console.log('[scanGame] creating card for pathKey:', pathKey);
-        const res = await runMakeCardWithMoves(historySans);
+        try { onPosProgress?.({ posIdx, posTotal, fen, pathKey, creating: true }); } catch {}
+        const res = await runMakeCardWithMoves(historySans, { shouldCancel });
         if (!res.ok) {
           console.warn('[scanGame] make-card failed for pathKey');
-          return { created, stopped: true };
+          return { created, stopped: true, cancelled: !!res.cancelled };
         }
         created += 1;
         // Reload and find new card
-        arr = loadCardsArray();
-        card = arr.find(c => c?.deck === deckId && (c?.fields?.moveSequence || '') === pathKey);
+        cardsCache = loadCardsArray();
+        card = findCardForPos();
         if (!card) {
           console.warn('[scanGame] created card not found after reload');
           return { created, stopped: true };
         }
-      } else {
-        console.log('[scanGame] card exists for pathKey');
       }
 
       // Compare user's played move to the card's expected answer
@@ -441,10 +509,15 @@ function registerIpc() {
         break;
       }
 
-      const expected = String(card?.fields?.answer || '').trim();
-      if (expected !== nextSan) {
-        console.log('[scanGame] deviation: expected', expected, 'got', nextSan);
-        return { created, stopped: true, deviated: true, expected, got: nextSan };
+      const answers = [];
+      if (forced) answers.push(forced);
+      const cardAnswer = (card && card.fields && typeof card.fields.answer === 'string') ? card.fields.answer.trim() : '';
+      if (cardAnswer) answers.push(cardAnswer);
+      const matches = answers.includes(nextSan);
+      const expected = answers[0] || cardAnswer || '';
+      if (!matches) {
+        console.log('[scanGame] deviation: expected one of', answers.join(', ') || '(none)', 'got', nextSan, forced ? '(forced answer)' : '');
+        return { created, stopped: true, deviated: true, expected, got: nextSan, forced: !!forced };
       }
 
       // Apply user's move
@@ -548,7 +621,7 @@ function registerIpc() {
         console.warn('[cards:update] id not found:', updated?.id);
         return false;
       }
-      arr[idx] = updated;
+      arr[idx] = normalizeCardFens(updated);
       saveCardsArray(arr);
       return true;
     } catch (e) {
@@ -564,7 +637,7 @@ function registerIpc() {
         console.warn('[cards:create] duplicate id:', card?.id);
         return false;
       }
-      arr.push(card);
+      arr.push(normalizeCardFens(card));
       saveCardsArray(arr);
       return true;
     } catch (e) {
@@ -697,21 +770,60 @@ function registerIpc() {
     const wc = evt.sender;
     const wcId = wc.id;
     let finished = false;
+    let progressSeq = 0;
+    const emitProgress = (p) => {
+      const msg = { ...p, seq: progressSeq += 1 };
+      try {
+        const target = BrowserWindow.fromId(wcId);
+        if (target && !target.isDestroyed()) {
+          target.webContents.send('autogen:progress', msg);
+          return;
+        }
+      } catch {}
+      // Fallback: broadcast to any open window (helps if the renderer reloads mid-scan)
+      try {
+        for (const win of BrowserWindow.getAllWindows()) {
+          if (win?.isDestroyed()) continue;
+          try { win.webContents.send('autogen:progress', msg); } catch {}
+        }
+      } catch {}
+    };
     const finish = (payload) => {
       if (finished) return payload;
       finished = true;
-      try { wc.send('autogen:done', payload); } catch {}
+      let sent = false;
+      try { wc.send('autogen:done', payload); sent = true; } catch {}
+      if (!sent) {
+        try {
+          for (const win of BrowserWindow.getAllWindows()) {
+            if (win?.isDestroyed()) continue;
+            try { win.webContents.send('autogen:done', payload); sent = true; } catch {}
+          }
+        } catch {}
+      }
       return payload;
     };
     try {
       cancelFlags.set(wcId, false);
-      const sendProgress = (p) => { try { wc.send('autogen:progress', p); } catch {} };
-      const limit = Math.max(1, Number(payload?.limit) || 5);
-      console.log(`[scan] start username=${usernameLC} limit=${limit} wc=${wcId}`);
+      const forcedMap = loadAnswerOverrides();
+      const limitRaw = Number(payload?.limit);
+      const limit = (Number.isFinite(limitRaw) && limitRaw > 0) ? limitRaw : Number.MAX_SAFE_INTEGER;
+      const fromStr = (payload?.fromDate || '').trim();
+      const toStr = (payload?.toDate || '').trim();
+      const fromTs = fromStr ? Date.parse(fromStr + 'T00:00:00Z') : null;
+      const toTs = toStr ? Date.parse(toStr + 'T23:59:59Z') : null;
+      console.log(`[scan] start username=${usernameLC} limit=${Number.isFinite(limit) && limit < Number.MAX_SAFE_INTEGER ? limit : 'unlimited'} range=${fromStr || '(-inf)'}..${toStr || '(+inf)'} wc=${wcId}`);
 
       const ledger = loadScannedLedger();
       const userKey = `chesscom:${usernameLC}`;
       const scannedMap = new Set(Object.keys(ledger[userKey]?.games || {}));
+      const persistLedger = () => {
+        const nextMap = {};
+        for (const k of scannedMap) nextMap[k] = true;
+        ledger[userKey] = { games: nextMap, lastScan: new Date().toISOString() };
+        saveScannedLedger(ledger);
+      };
+      let ledgerDirty = false;
 
       // Get monthly archives
       const archUrl = `https://api.chess.com/pub/player/${encodeURIComponent(usernameLC)}/games/archives`;
@@ -726,6 +838,14 @@ function registerIpc() {
       for (const mUrl of months) {
         if (queue.length >= limit || cancelFlags.get(wcId)) break;
         console.log(`[scan] fetch month: ${mUrl}`);
+        const mMatch = /\/(\d{4})\/(\d{2})$/.exec(mUrl);
+        const mYear = mMatch ? Number(mMatch[1]) : null;
+        const mMonth = mMatch ? Number(mMatch[2]) : null;
+        const monthStart = (mYear && mMonth) ? Date.UTC(mYear, mMonth - 1, 1, 0, 0, 0, 0) : null;
+        const monthEnd = (mYear && mMonth) ? Date.UTC(mYear, mMonth, 0, 23, 59, 59, 999) : null;
+        // Skip months entirely outside range
+        if (toTs && monthStart && monthStart > toTs) continue;
+        if (fromTs && monthEnd && monthEnd < fromTs) break; // archives are newest-first
         let monthData;
         try {
           monthData = await fetchJson(mUrl);
@@ -746,13 +866,19 @@ function registerIpc() {
           const gameKey = String(g?.url || g?.uuid || '').trim();
           if (!gameKey) continue;
           if (scannedMap.has(gameKey)) continue; // already scanned
+          const endTs = Number(g?.end_time) ? Number(g.end_time) * 1000 : null;
+          if (fromTs && endTs && endTs < fromTs) continue;
+          if (toTs && endTs && endTs > toTs) continue;
           queue.push(g);
         }
         console.log(`[scan] queue size so far=${queue.length}`);
       }
 
       // Overall progress is per game; per-position progress shows fractional advance within each game
-      sendProgress({ phase: 'start', total: queue.length });
+      const startMessage = queue.length
+        ? `Scanning ${queue.length} game${queue.length === 1 ? '' : 's'}...`
+        : 'No new games to scan.';
+      emitProgress({ phase: 'start', total: queue.length, message: startMessage });
 
       let idx = 0;
       for (const g of queue) {
@@ -760,34 +886,72 @@ function registerIpc() {
         const gameKey = String(g?.url || g?.uuid || '').trim();
         console.log(`[scan] process ${idx + 1}/${queue.length}: ${gameKey}`);
 
-        // game-start tick
-        sendProgress({ phase: 'game', index: idx, total: queue.length, url: gameKey });
+        // game-start tick (1-based for UI alignment with logs)
+        emitProgress({ phase: 'game', index: idx + 1, total: queue.length, url: gameKey, message: `Scanning game ${idx + 1}/${queue.length}` });
 
-        const res = await scanOneGameForUser(g, usernameLC, (posIdx, posTotal) => {
-          // Fractional index within the game
-          const frac = Math.min(1, Math.max(0, posIdx / Math.max(1, posTotal)));
-          sendProgress({ phase: 'position', index: idx + frac, total: queue.length, url: gameKey });
-        });
-
-        scannedMap.add(gameKey);
-        scannedCount += 1;
-        if (res?.created) createdCount += res.created;
+        const res = await scanOneGameForUser(g, usernameLC, ({ posIdx, posTotal, fen, pathKey, creating }) => {
+          // Keep progress/game counters stable while still emitting per-move detail
+          const gameNumber = idx + 1;
+          const phase = creating ? 'creating' : 'position';
+          const message = creating
+            ? `Creating card in game ${gameNumber}/${queue.length}`
+            : `Evaluating move in game ${gameNumber}/${queue.length}`;
+          emitProgress({
+            phase,
+            index: gameNumber,
+            total: queue.length,
+            url: gameKey,
+            fen,
+            pgn: pathKey,
+            posIdx,
+            posTotal,
+            creating,
+            message
+          });
+        }, forcedMap, () => !!cancelFlags.get(wcId));
 
         // game-done tick
-        sendProgress({ phase: 'game:done', index: idx + 1, total: queue.length, url: gameKey });
+        const deviated = !!res?.deviated;
+        const cancelledGame = !!res?.cancelled;
+        if (!cancelledGame) {
+          if (deviated) {
+            const prevSize = scannedMap.size;
+            scannedMap.add(gameKey);
+            if (scannedMap.size !== prevSize) ledgerDirty = true;
+          }
+          scannedCount += 1;
+          if (res?.created) createdCount += res.created;
+          if (ledgerDirty) persistLedger();
+        }
+        const gameMessage = res?.cancelled
+          ? `Cancelled during game ${idx + 1}/${queue.length}`
+          : deviated
+            ? `Deviation in game ${idx + 1}/${queue.length}; moving to next game.`
+            : `Finished game ${idx + 1}/${queue.length}`;
+        emitProgress({
+          phase: 'game:done',
+          index: idx + 1,
+          total: queue.length,
+          url: gameKey,
+          message: gameMessage,
+          deviated,
+          expected: res?.expected,
+          got: res?.got,
+          forced: res?.forced
+        });
+
+        if (cancelledGame) break;
 
         idx += 1;
         await sleep(50);
       }
 
       // Persist ledger
-      const nextMap = {};
-      for (const k of scannedMap) nextMap[k] = true;
-      ledger[userKey] = { games: nextMap, lastScan: new Date().toISOString() };
-      saveScannedLedger(ledger);
+      if (ledgerDirty) persistLedger();
 
       const cancelled = !!cancelFlags.get(wcId);
       const msg = `${cancelled ? 'Scan canceled.' : 'Scan complete.'} Games processed: ${scannedCount}. New cards: ${createdCount}.`;
+      emitProgress({ phase: 'done', index: queue.length, total: queue.length, message: msg });
       const result = { ok: true, message: msg, scanned: scannedCount, created: createdCount, cancelled };
       console.log(`[scan] done wc=${wcId} cancelled=${cancelled} scanned=${scannedCount} created=${createdCount}`);
       return finish(result);

@@ -4,8 +4,7 @@ import { Chess } from 'chess.js';
 import './boardplayer.css'; // nav button styles
 import { useBoardKeybinds } from '../hooks/useBoardKeybinds';
 import { useKeybinds, formatActionKeys } from '../context/KeybindsProvider';
-
-const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+import { ensureFullFen, fenKey, START_FEN } from '../utils/fen';
 
 type LastMove = { from: string; to: string; san: string } | null;
 
@@ -115,7 +114,7 @@ export default function BoardPlayer(props: BoardPlayerProps & WithFlip) {
   const { frames, lastMoves } = useMemo(() => {
     // Returns both frames[] and lastMoves[] (per-frame last move)
     if (props.mode === 'frames') {
-      const fs = (props.frames && props.frames.length) ? props.frames : [START_FEN];
+      const fs = (props.frames && props.frames.length ? props.frames : [START_FEN]).map(f => ensureFullFen(f));
       const ms: LastMove[] = (() => {
         const given = props.frameMoves || [];
         // normalize length
@@ -132,6 +131,8 @@ export default function BoardPlayer(props: BoardPlayerProps & WithFlip) {
     if (props.mode === 'pgn') {
       const sans = pgnToSanArray(props.pgn);
       const chess = new Chess(); // standard start
+      const targetFenFull = props.targetFen ? ensureFullFen(props.targetFen) : undefined;
+      const targetKey = targetFenFull ? fenKey(targetFenFull) : null;
       const fs: string[] = [];
       const ms: LastMove[] = [];
 
@@ -147,23 +148,24 @@ export default function BoardPlayer(props: BoardPlayerProps & WithFlip) {
         ms.push({ from: mv.from, to: mv.to, san: mv.san });
       }
 
-      if (props.targetFen) {
+      if (targetFenFull) {
         const last = fs[fs.length - 1];
-        if (!last || last !== props.targetFen) {
-          fs.push(props.targetFen);
+        if (!last || fenKey(last) !== targetKey) {
+          fs.push(targetFenFull);
           ms.push(null); // we didn't know the producing move
         }
       }
       if (!fs.length) {
-        const only = props.targetFen ? [props.targetFen] : [START_FEN];
+        const only = targetFenFull ? [targetFenFull] : [START_FEN];
         return { frames: only, lastMoves: [null] };
       }
       return { frames: fs, lastMoves: ms.length ? ms : new Array(fs.length).fill(null) };
     }
 
     // props.mode === 'san'
-    const chess = new Chess(props.initialFen);
-    const fs: string[] = [props.initialFen];
+    const initialFen = ensureFullFen(props.initialFen);
+    const chess = new Chess(initialFen);
+    const fs: string[] = [initialFen];
     const ms: LastMove[] = [null];
     for (const san of props.sanMoves || []) {
       const mv = chess.move(san);
@@ -187,14 +189,17 @@ export default function BoardPlayer(props: BoardPlayerProps & WithFlip) {
   useEffect(() => { props.onIndexChange?.(idx); }, [idx]);
   const atStart = idx <= 0;
   const atEnd = idx >= frames.length - 1;
-  const reviewTargetFen = reviewFenProp ?? (props.mode === 'pgn' ? props.targetFen : undefined);
+  const reviewTargetFen = reviewFenProp
+    ? ensureFullFen(reviewFenProp)
+    : (props.mode === 'pgn' && props.targetFen ? ensureFullFen(props.targetFen) : undefined);
   const reviewAt = useMemo(() => {
     if (typeof reviewIndexProp === 'number' && Number.isFinite(reviewIndexProp)) {
       const clamped = Math.max(0, Math.min(frames.length - 1, Math.round(reviewIndexProp)));
       if (frames.length) return clamped;
     }
-    if (reviewTargetFen) {
-      const i = frames.findIndex(f => f === reviewTargetFen);
+    const reviewKey = reviewTargetFen ? fenKey(reviewTargetFen) : null;
+    if (reviewKey) {
+      const i = frames.findIndex(f => fenKey(f) === reviewKey);
       if (i >= 0) return i;
     }
     return null;

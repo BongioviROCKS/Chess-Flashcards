@@ -6,6 +6,7 @@ import { useKeybinds, formatActionKeys } from '../context/KeybindsProvider';
 import { useSettings } from '../state/settings';
 import type { Card } from '../data/types';
 import { Chess } from 'chess.js';
+import { fenKey, normalizeCardFens } from '../utils/fen';
 
 type EvalKind = 'cp' | 'mate';
 
@@ -356,14 +357,15 @@ export default function ManualAddPage() {
       if (!parsed.ok) {
         return { ok: false, reason: parsed.reason, sans: [], reviewFEN: '', deckId: 'white-other', pathKey: '' } as any;
       }
-      const fenNow = parsed.fen ?? (() => {
+      const fenFull = parsed.fen ?? (() => {
         const c = new Chess();
         for (const san of parsed.sans) c.move(san);
         return c.fen();
       })();
-      const deckId = (fenNow.split(' ')[1] === 'w') ? 'white-other' : 'black-other';
+      const reviewFen = fenKey(fenFull);
+      const deckId = (reviewFen.split(' ')[1] === 'w') ? 'white-other' : 'black-other';
       const pathKey = parsed.sans.join(' ');
-      return { ok: true, sans: parsed.sans, reviewFEN: fenNow, deckId, pathKey } as any;
+      return { ok: true, sans: parsed.sans, reviewFEN: reviewFen, deckId, pathKey } as any;
     } catch (e: any) {
       return { ok: false, reason: e?.message || 'Invalid input', sans: [], reviewFEN: '', deckId: 'white-other', pathKey: '' } as any;
     }
@@ -541,9 +543,9 @@ export default function ManualAddPage() {
       tags: lineToTags(draft.tags),
       fields: {
         moveSequence: draft.fields.moveSequence,
-        fen: draft.fields.fen,
+        fen: fenKey(draft.fields.fen),
         answer: draft.fields.answer,
-        answerFen: draft.fields.answerFen || undefined,
+        answerFen: draft.fields.answerFen ? fenKey(draft.fields.answerFen) : undefined,
         eval: evalField as any,
         exampleLine: lineToArr(draft.fields.exampleLine),
         otherAnswers: lineToArr(draft.fields.otherAnswers),
@@ -593,7 +595,7 @@ export default function ManualAddPage() {
 
     setSaving(true);
     try {
-      const ok = await cardsApi.create(card);
+      const ok = await cardsApi.create(normalizeCardFens(card));
       if (!ok) throw new Error('Write failed');
       setSaved(true);
       setRoot({ id: newId() }); // keep the form but refresh ID

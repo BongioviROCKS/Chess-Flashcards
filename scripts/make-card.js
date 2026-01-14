@@ -36,6 +36,41 @@ const ROOT = process.cwd();
 const CARDS_PATH = path.resolve(ROOT, 'src', 'data', 'cards.json');
 const CONFIG_PATH = path.resolve(ROOT, 'src', 'data', 'cardgen.config.json');
 const ANS_OVR_PATH = path.resolve(ROOT, 'src', 'data', 'answer-overrides.json');
+const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
+const fenKey4 = (fen) => {
+  try { return String(fen || '').split(/\s+/).slice(0, 4).join(' '); }
+  catch { return String(fen || ''); }
+};
+const ensureFullFen = (fen) => {
+  const trimmed = String(fen || '').trim();
+  if (!trimmed) return START_FEN;
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  if (parts.length >= 6) return parts.slice(0, 6).join(' ');
+  if (parts.length === 5) return [...parts.slice(0, 5), '1'].join(' ');
+  const key = fenKey4(trimmed);
+  return key ? `${key} 0 1` : START_FEN;
+};
+const normalizeCardFens = (card) => {
+  if (!card || typeof card !== 'object') return card;
+  const next = { ...card, fields: { ...(card.fields || {}) } };
+  const setIf = (obj, key) => {
+    if (obj && typeof obj[key] === 'string') obj[key] = fenKey4(obj[key]);
+  };
+  setIf(next.fields, 'fen');
+  setIf(next.fields, 'answerFen');
+  const cc = next.fields.creationCriteria;
+  if (cc && typeof cc === 'object') {
+    next.fields.creationCriteria = { ...cc };
+    const input = next.fields.creationCriteria.input;
+    if (input && typeof input === 'object') {
+      next.fields.creationCriteria.input = { ...input };
+      setIf(next.fields.creationCriteria.input, 'fen');
+    }
+  }
+  return next;
+};
+const normalizeCardsArray = (arr) => Array.isArray(arr) ? arr.map(normalizeCardFens) : [];
 
 // Allow the Electron app to cancel an in-flight Stockfish analysis
 let CURRENT_ENGINE = null;
@@ -109,8 +144,8 @@ function loadCardsArray() {
     const raw = fs.readFileSync(CARDS_PATH, 'utf-8').trim();
     if (raw === '') return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-    if (parsed && Array.isArray(parsed.cards)) return parsed.cards; // legacy
+    if (Array.isArray(parsed)) return normalizeCardsArray(parsed);
+    if (parsed && Array.isArray(parsed.cards)) return normalizeCardsArray(parsed.cards); // legacy
     return [];
   } catch {
     return [];
@@ -167,7 +202,8 @@ function formatCardsJson(arr) {
 }
 function saveCardsArray(arr) {
   fs.mkdirSync(path.dirname(CARDS_PATH), { recursive: true });
-  const out = formatCardsJson(arr);
+  const normalized = normalizeCardsArray(arr);
+  const out = formatCardsJson(normalized);
   fs.writeFileSync(CARDS_PATH, out, 'utf-8');
 }
 
@@ -252,7 +288,7 @@ function parseInfo(line) {
   return o;
 }
 function uciToSanLine(initialFen, uciMoves) {
-  const chess = new Chess(initialFen);
+  const chess = new Chess(ensureFullFen(initialFen));
   const out = [];
   for (const uci of uciMoves || []) {
     if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/i.test(uci)) break;
@@ -345,23 +381,25 @@ function buildReviewFromSANs(sans) {
     const mv = chess.move(san);
     if (!mv) throw new Error(`Invalid move in moves/PGN: ${san}`);
   }
-  const fen = chess.fen();
-  const stm = fen.split(' ')[1]; // 'w' or 'b'
+  const fenFull = chess.fen();
+  const fen = fenKey4(fenFull);
+  const stm = fenFull.split(' ')[1]; // 'w' or 'b'
   const plies = sans.length;
   const depthMove = computeDepthFromPlies(plies);
   const deckId = stm === 'w' ? 'white-other' : 'black-other';
-  return { fen, stm, sans, depthMove, deckId };
+  return { fen, fenFull, stm, sans, depthMove, deckId };
 }
 
 function buildReviewFromFEN(fenInput) {
-  const fen = String(fenInput || '').trim();
-  if (!fen) throw new Error('FEN input is empty');
-  const parts = fen.split(/\s+/);
+  const fenRaw = String(fenInput || '').trim();
+  if (!fenRaw) throw new Error('FEN input is empty');
+  const fenFull = ensureFullFen(fenRaw);
+  const parts = fenFull.split(/\s+/);
   const stm = parts[1] || 'w';
   const fullmove = parseInt(parts[5], 10);
   const depthMove = Number.isFinite(fullmove) ? fullmove : 0;
   const deckId = stm === 'w' ? 'white-other' : 'black-other';
-  return { fen, stm, sans: [], depthMove, deckId };
+  return { fen: fenKey4(fenFull), fenFull, stm, sans: [], depthMove, deckId };
 }
 
 /**
@@ -425,7 +463,8 @@ export async function createCard({
   const review = (typeof fen === 'string' && fen.trim())
     ? buildReviewFromFEN(fen)
     : buildReviewFromSANs(sans);
-  const { fen: reviewFEN, deckId, depthMove } = review;
+  const { fen: reviewFEN, fenFull: reviewFenFull, deckId, depthMove } = review;
+  const reviewFenLoad = reviewFenFull || ensureFullFen(reviewFEN);
 
   // Load cards and compute path key (duplicate handling occurs after config is loaded)
   const arr = loadCardsArray();
@@ -466,8 +505,8 @@ export async function createCard({
   }
 
   // Transposition-aware; run engine only if needed or forced
-  const key4 = (() => { try { return reviewFEN.split(/\s+/).slice(0,4).join(' '); } catch { return reviewFEN; } })();
-  const sameFenCards = arr.filter(c => c?.deck === deckId && typeof c?.fields?.fen === 'string' && c.fields.fen.split(/\s+/).slice(0,4).join(' ') === key4);
+  const key4 = fenKey4(reviewFEN);
+  const sameFenCards = arr.filter(c => c?.deck === deckId && fenKey4(c?.fields?.fen) === key4);
   const forceEntry = OVR[key4] ?? OVR[reviewFEN];
   const forcedSAN = (typeof forceEntry === 'string') ? String(forceEntry) : (forceEntry && typeof forceEntry === 'object' ? String(forceEntry.move || '') : undefined);
   let infos = [];
@@ -475,7 +514,7 @@ export async function createCard({
   const shouldRunEngine = !!overwriteId || !sameFenCards.length || !!forcedSAN;
   if (shouldRunEngine) {
     const t0 = Date.now();
-    infos = await analyzeWithStockfish(reviewFEN, { depth, threads, hash, multipv }, resolveEngine);
+    infos = await analyzeWithStockfish(reviewFenLoad, { depth, threads, hash, multipv }, resolveEngine);
     engineMs = Date.now() - t0;
     if (!infos.length && !sameFenCards.length && !forcedSAN && !overwriteId) {
       // If this is not an overwrite and we have no anchor and no forced answer, treat as failure
@@ -487,7 +526,7 @@ export async function createCard({
   let bestInfo, bestSanLine, bestAnswerSAN, bestEval;
   if (infos.length) {
     bestInfo = infos.find(o => (o?.multipv || 1) === 1) || infos[0];
-    bestSanLine = uciToSanLine(reviewFEN, bestInfo.pv);
+    bestSanLine = uciToSanLine(reviewFenLoad, bestInfo.pv);
     bestAnswerSAN = bestSanLine[0] || '';
     bestEval = bestInfo.score
       ? { kind: bestInfo.score.kind, value: bestInfo.score.value, depth: bestInfo.depth }
@@ -508,7 +547,7 @@ export async function createCard({
     if (idx === 1) continue;
     if (!it.score || !it.pv?.length) continue;
 
-    const sanLine = uciToSanLine(reviewFEN, it.pv);
+    const sanLine = uciToSanLine(reviewFenLoad, it.pv);
     const ans = sanLine[0];
     if (!ans || seen.has(ans)) continue;
 
@@ -548,7 +587,7 @@ export async function createCard({
     for (const it of infos || []) {
       const idx = it?.multipv || 1;
       if (idx === 1 || !it.pv || !it.pv.length) continue;
-      const sanLine = uciToSanLine(reviewFEN, it.pv);
+      const sanLine = uciToSanLine(reviewFenLoad, it.pv);
       const ans = sanLine[0];
       if (!ans) continue;
       altEvalMap.set(ans, it.score ? { kind: it.score.kind, value: it.score.value, depth: it.depth } : undefined);
@@ -569,7 +608,7 @@ export async function createCard({
     if (othersObjs.length === 0 && multipv > 1 && infos && infos.length) {
       const alt = infos.find(o => (o?.multipv || 1) > 1);
       if (alt && alt.pv && alt.pv.length) {
-        const sanLine = uciToSanLine(reviewFEN, alt.pv);
+        const sanLine = uciToSanLine(reviewFenLoad, alt.pv);
         const ans = sanLine[0];
         if (ans) othersObjs.push({ move: ans, eval: alt.score ? { kind: alt.score.kind, value: alt.score.value, depth: alt.depth } : undefined });
       }
@@ -586,7 +625,7 @@ export async function createCard({
   // Answer FEN (apply best move)
   let answerFen;
   if (bestAnswerSAN) {
-    const chess = new Chess(reviewFEN);
+    const chess = new Chess(reviewFenLoad);
     const mv = chess.move(bestAnswerSAN);
     if (mv) answerFen = chess.fen();
   }
@@ -660,7 +699,7 @@ export async function createCard({
     if (chosen && card.fields.answer !== chosen) {
       card.fields.answer = chosen;
       try {
-        const chessX = new Chess(reviewFEN);
+        const chessX = new Chess(reviewFenLoad);
         const mvX = chessX.move(chosen, { sloppy: true });
         if (mvX) card.fields.answerFen = chessX.fen();
       } catch {}
@@ -689,7 +728,7 @@ export async function createCard({
         if (c?.fields?.answer !== card.fields.answer) {
           c.fields.answer = card.fields.answer;
           try {
-            const chessY = new Chess(c.fields.fen || reviewFEN);
+            const chessY = new Chess(ensureFullFen(c.fields.fen || reviewFenLoad));
             const mvY = chessY.move(card.fields.answer, { sloppy: true });
             if (mvY) c.fields.answerFen = chessY.fen();
           } catch {}

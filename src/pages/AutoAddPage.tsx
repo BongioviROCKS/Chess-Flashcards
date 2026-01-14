@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../state/settings';
 import { useBackKeybind } from '../hooks/useBackKeybind';
@@ -7,7 +7,23 @@ import CardCreationSettingsSection from '../components/CardCreationSettingsSecti
 import { replaceCards } from '../data/cardStore';
 import ToggleSwitch from '../components/ToggleSwitch';
 
-type Progress = { phase?: string; index?: number; total?: number; url?: string };
+type Progress = {
+  phase?: string;
+  index?: number;
+  total?: number;
+  url?: string;
+  fen?: string;
+  pgn?: string;
+  message?: string;
+  posIdx?: number;
+  posTotal?: number;
+  creating?: boolean;
+  seq?: number;
+  deviated?: boolean;
+  expected?: string;
+  got?: string;
+  forced?: boolean;
+};
 
 const loadTimeframe = () => {
   try {
@@ -50,6 +66,7 @@ export default function AutoAddPage() {
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState<Progress | null>(null);
   const cleanupRef = useRef<{ offProg?: () => void; offDone?: () => void }>({});
+  const lastProgressAt = useRef<number>(0);
 
   const saveCardgenConfig = async () => {
     try {
@@ -66,6 +83,36 @@ export default function AutoAddPage() {
   useEffect(() => () => {
     cleanupRef.current.offProg?.();
     cleanupRef.current.offDone?.();
+  }, []);
+
+  const formatStatusFromProgress = useCallback((p: Progress | null) => {
+    if (!p) return null;
+    if (p.message) return p.message;
+    if (p.phase === 'start') {
+      const total = Math.max(0, Math.floor(p.total ?? 0));
+      return total ? `Scanning ${total} game${total === 1 ? '' : 's'}...` : 'No new games to scan.';
+    }
+    if (p.phase === 'game' || p.phase === 'game:done') {
+      const total = Math.max(1, Math.floor(p.total ?? 1));
+      const idx = Math.min(total, Math.max(1, Math.floor(p.index ?? 1)));
+      const prefix = p.phase === 'game:done' ? 'Finished' : 'Scanning';
+      return `${prefix} game ${idx}/${total}`;
+    }
+    if (p.phase === 'creating' || p.phase === 'position') {
+      const totalGames = Math.max(1, Math.floor(p.total ?? 1));
+      const gameIdx = Math.min(totalGames, Math.max(1, Math.floor(p.index ?? 1)));
+      const prefix = p.phase === 'creating' ? 'Creating card' : 'Evaluating move';
+      return `${prefix} (game ${gameIdx}/${totalGames})`;
+    }
+    if (p.phase === 'done') return p.message || 'Scan complete.';
+    return p.phase || null;
+  }, []);
+
+  const finishScan = useCallback((message?: string) => {
+    setBusy(false);
+    setStatus(message || 'Scan complete.');
+    try { cleanupRef.current.offProg?.(); } catch {}
+    try { cleanupRef.current.offDone?.(); } catch {}
   }, []);
 
   const startScan = () => {
@@ -104,18 +151,20 @@ export default function AutoAddPage() {
 
     cleanupRef.current.offProg?.();
     cleanupRef.current.offDone?.();
-    cleanupRef.current.offProg = window.autogen?.onProgress?.((p: Progress) => setProgress(p || null)) || undefined;
+    cleanupRef.current.offProg = window.autogen?.onProgress?.((p: Progress) => {
+      lastProgressAt.current = Date.now();
+      const msg = formatStatusFromProgress(p || null);
+      if (msg) setStatus(msg);
+      setProgress(p ? { ...p } : null);
+    }) || undefined;
     cleanupRef.current.offDone = window.autogen?.onDone?.(async (res: { ok?: boolean; message?: string; scanned?: number; created?: number; cancelled?: boolean }) => {
-      setBusy(false);
-      setStatus(res?.message || (res?.ok ? 'Scan complete.' : 'Finished'));
+      finishScan(res?.message || (res?.ok ? 'Scan complete.' : 'Finished'));
       if (res?.ok) {
         try {
           const arr = await (window as any).cards?.readAll?.();
           if (arr) replaceCards(arr as any);
         } catch {}
       }
-      try { cleanupRef.current.offProg?.(); } catch {}
-      try { cleanupRef.current.offDone?.(); } catch {}
     }) || undefined;
 
     const opts: any = { username };
@@ -131,28 +180,24 @@ export default function AutoAddPage() {
       if (target === 'chess') {
         const run = window.autogen?.scanChessCom?.(opts);
         if (!run) throw new Error('Auto Add is not available in this build.');
-        run.catch((e: any) => { setBusy(false); setErr(e?.message || 'Scan failed to start.'); });
+        run.catch((e: any) => { finishScan(); setErr(e?.message || 'Scan failed to start.'); });
       } else {
         if (!window.autogen?.scanLichess) {
           throw new Error('Lichess scanning is not available in this build.');
         }
         const run = window.autogen.scanLichess(opts);
         if (!run) throw new Error('Lichess scan could not start.');
-        run.catch((e: any) => { setBusy(false); setErr(e?.message || 'Scan failed to start.'); });
+        run.catch((e: any) => { finishScan(); setErr(e?.message || 'Scan failed to start.'); });
       }
     } catch (e: any) {
-      setBusy(false);
-      setStatus(null);
+      finishScan();
       setErr(e?.message || 'Failed to start Auto Add.');
-      try { cleanupRef.current.offProg?.(); } catch {}
-      try { cleanupRef.current.offDone?.(); } catch {}
     }
   };
 
   const cancelScan = async () => {
     try { window.autogen?.cancel?.(); } catch {}
-    setBusy(false);
-    setStatus('Cancelled.');
+    finishScan('Cancelled.');
   };
 
   const timeHint = () => {
@@ -161,6 +206,31 @@ export default function AutoAddPage() {
     if (fromDate) return `Games on or after ${fromDate} will be scanned.`;
     return `Games up to ${toDate} will be scanned.`;
   };
+
+  useEffect(() => {
+    if (!busy) return;
+    if (progress?.phase === 'done') {
+      finishScan(progress.message || 'Scan complete.');
+      (async () => {
+        try {
+          const arr = await (window as any).cards?.readAll?.();
+          if (arr) replaceCards(arr as any);
+        } catch {}
+      })();
+      return;
+    }
+    if (progress?.phase === 'start' && Math.max(0, Math.floor(progress.total ?? 0)) === 0) {
+      finishScan(progress.message || 'No new games to scan.');
+      return;
+    }
+    const total = Math.max(0, Math.floor(progress?.total ?? 0));
+    const idx = Math.max(0, Math.floor(progress?.index ?? 0));
+    const freshMs = Date.now() - lastProgressAt.current;
+    if (busy && total > 0 && freshMs > 15000 && idx > 0) {
+      // Fallback in case the backend misses a final done event
+      finishScan('Finished (no further updates).');
+    }
+  }, [busy, progress, finishScan]);
 
   return (
     <div className="container">
@@ -237,31 +307,12 @@ export default function AutoAddPage() {
 
         <div className="section" style={{ display: 'grid', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div>
-              <div style={{ fontWeight: 700 }}>Auto Add Status</div>
-              <div className="sub" style={{ marginTop: 2 }}>{status || 'Ready to scan.'}</div>
-            </div>
+            <div style={{ fontWeight: 700 }}>Auto Add Status</div>
             <div style={{ display: 'flex', gap: 8 }}>
               {!busy && <button className="button secondary" onClick={startScan}>Start</button>}
               {busy && <button className="button secondary" onClick={cancelScan}>Cancel</button>}
             </div>
           </div>
-          {err && <div className="sub" style={{ color: 'var(--danger, #d33)' }} aria-live="polite">{err}</div>}
-          <div style={{ height: 10, background: 'var(--border)', borderRadius: 6, overflow: 'hidden', position: 'relative' }}>
-            {(() => {
-              const total = Math.max(1, progress?.total || 0);
-              const index = Math.min(total, (progress?.index || 0));
-              const pct = total > 0 ? Math.round(((busy ? index : total) / total) * 100) : 0;
-              return (
-                <div style={{ width: `${pct}%`, height: '100%', background: 'var(--accent, #36f)' }} />
-              );
-            })()}
-          </div>
-          {progress?.url && (
-            <div className="sub" style={{ fontSize: 12, opacity: 0.8, wordBreak: 'break-all' }}>
-              {progress.url}
-            </div>
-          )}
         </div>
       </div>
     </div>

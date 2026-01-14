@@ -1,6 +1,7 @@
 import { Card } from './types';
 import { getChildrenOf } from '../decks';
 import jsonRaw from './cards.json?raw';
+import { normalizeCards } from '../utils/fen';
 
 // ---------- Parse cards.json (array-only; supports 0-byte) ----------
 let cards: Card[] = [];
@@ -13,7 +14,7 @@ try {
     if (!Array.isArray(parsed)) {
       throw new Error('cards.json must be a JSON array of Card objects');
     }
-    cards = parsed as Card[];
+    cards = normalizeCards(parsed as Card[]);
   }
 } catch (e) {
   console.warn('[cardStore] Failed to parse cards.json as an array; using empty set.', e);
@@ -77,7 +78,7 @@ export function cardsByDeck(deckId: string): Card[] {
 // Replace in-memory cards from disk (or other source) and recompute indices/relations.
 export function replaceCards(next: Card[]) {
   if (!Array.isArray(next)) next = [] as Card[];
-  cards = next as Card[];
+  cards = normalizeCards(next as Card[]);
   byId = new Map<string, Card>(cards.map(c => [c.id, c]));
   // Reapply due overrides (local testing state)
   const ov = loadOverrides();

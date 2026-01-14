@@ -110,3 +110,10 @@
         Allow stockfish to be deterministic (force threads = 1 and hash = 1024)
         Remove FEN as input from Manual Add (must use PGN or Moves)
         Add Auto Add page
+1/13/26:
+    2 hours:
+        work on status of Auto Add
+        standardize FEN to 4 items
+1/14/26:
+    1 hour:
+        remove status of Auto Add until I can fix it later
