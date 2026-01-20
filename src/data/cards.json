@@ -327,5 +327,34 @@
       }
     },
     "due": "new"
+  },
+  {
+    "id": "c_1768819818840_o4h0",
+    "deck": "black-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 Nf3 Nc6 d4 exd4 Nxd4 Nf6 Nc3 Bb4 Nxc6 bxc6 Bd3 d5 exd5 O-O O-O cxd5 Bg5 Be6 Qf3 h6 Bxf6 Qxf6 Nxd5 Qxf3 gxf3 Bxd5 Kh1 Bxf3+ Kg1",
+      "fen": "r4rk1/p1p2pp1/7p/8/1b6/3B1b2/PPP2P1P/R4RK1 b - -",
+      "answer": "Rad8",
+      "answerFen": "3r1rk1/p1p2pp1/7p/8/1b6/3B1b2/PPP2P1P/R4RK1 w - -",
+      "eval": {"kind": "cp", "value": 656, "depth": 40},
+      "exampleLine": ["Rad8", "a3", "Rd5", "Rfd1", "Rg5+", "Kf1", "Bg2+", "Kg1", "Bc6+", "Kf1", "Bd6", "Re1", "Bxh2", "Ke2", "Re8+", "Kd2", "Bf4+", "Kc3", "Rge5", "Rxe5", "Rxe5", "a4", "g5", "b4", "h5", "b5", "Bf3", "a5", "h4", "b6", "cxb6", "axb6", "axb6", "Ra7", "Kg7", "Bc4", "Bd5", "Kd4", "Bxc4", "Rb7", "Re2"],
+      "otherAnswers": [
+        {"move": "Rfd8", "eval": {"kind": "cp", "value": 645, "depth": 40}},
+        {"move": "Rfe8", "eval": {"kind": "cp", "value": 622, "depth": 40}},
+        {"move": "Rae8", "eval": {"kind": "cp", "value": 618, "depth": 40}}
+      ],
+      "depth": 16,
+      "creationCriteria": {
+        "createdAt": "2026-01-19T10:50:18.840Z",
+        "input": {"movesSAN": ["e4", "e5", "Nf3", "Nc6", "d4", "exd4", "Nxd4", "Nf6", "Nc3", "Bb4", "Nxc6", "bxc6", "Bd3", "d5", "exd5", "O-O", "O-O", "cxd5", "Bg5", "Be6", "Qf3", "h6", "Bxf6", "Qxf6", "Nxd5", "Qxf3", "gxf3", "Bxd5", "Kh1", "Bxf3+", "Kg1"], "pgn": "1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nf6 5. Nc3 Bb4 6. Nxc6 bxc6 7. Bd3 d5 8. exd5 O-O 9. O-O cxd5 10. Bg5 Be6 11. Qf3 h6 12. Bxf6 Qxf6 13. Nxd5 Qxf3 14. gxf3 Bxd5 15. Kh1 Bxf3+ 16. Kg1", "fen": "r4rk1/p1p2pp1/7p/8/1b6/3B1b2/PPP2P1P/R4RK1 b - -"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 40, "threads": 1, "hash": 1024, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 2726448,
+        "engineBest": {"move": "Rad8", "eval": {"kind": "cp", "value": 656, "depth": 40}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      }
+    },
+    "due": "new"
   }
 ]
