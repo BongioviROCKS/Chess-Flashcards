@@ -1,3 +1,6 @@
+Manual add:
+    allow queueing of card creation
+    allow input to be crafted via board UI
 Fix Auto Add to be able to move onto the next game after an incorrect move is played
     Also ensure that it listens to the forced answers?
 Add more settings/filter to Auto Add page

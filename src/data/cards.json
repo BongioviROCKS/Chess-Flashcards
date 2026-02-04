@@ -356,5 +356,125 @@
       }
     },
     "due": "new"
+  },
+  {
+    "id": "c_1770170054165_466u",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 Nf3 f5 Nxe5 Nc6 Qh5+ g6 Nxg6 Nf6",
+      "fen": "r1bqkb1r/pppp3p/2n2nN1/5p1Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq -",
+      "answer": "Qh4",
+      "answerFen": "r1bqkb1r/pppp3p/2n2nN1/5p2/4P2Q/8/PPPP1PPP/RNB1KB1R b KQkq -",
+      "eval": {"kind": "cp", "value": 301, "depth": 36},
+      "exampleLine": ["Qh4", "hxg6", "Qxh8", "d5", "d3", "Kf7", "Qh4", "Qe8", "Bg5", "Bg7", "c3", "fxe4", "d4", "Bf5", "Be2", "Qd7", "O-O", "Rh8", "Qg3", "Nd8", "f3", "Ne6", "Bxf6", "Bxf6", "fxe4", "dxe4", "Bc4", "Bxd4+", "cxd4", "Qxd4+", "Kh1", "Qxc4", "Nc3", "Qd3", "Qxd3", "exd3", "Rad1", "c5"],
+      "otherAnswers": [
+        {"move": "Qh3", "eval": {"kind": "cp", "value": 231, "depth": 36}}
+      ],
+      "depth": 6,
+      "creationCriteria": {
+        "createdAt": "2026-02-04T01:54:14.164Z",
+        "input": {"movesSAN": ["e4", "e5", "Nf3", "f5", "Nxe5", "Nc6", "Qh5+", "g6", "Nxg6", "Nf6"], "pgn": "", "fen": "r1bqkb1r/pppp3p/2n2nN1/5p1Q/4P3/8/PPPP1PPP/RNB1KB1R w KQkq -"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 1, "hash": 1024, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 665003,
+        "engineBest": {"move": "Qh4", "eval": {"kind": "cp", "value": 301, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "children": [
+        "c_1770195528183_wxnh"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1770195528183_wxnh",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 Nf3 f5 Nxe5 Nc6 Qh5+ g6 Nxg6 Nf6 Qh4 Rg8",
+      "fen": "r1bqkbr1/pppp3p/2n2nN1/5p2/4P2Q/8/PPPP1PPP/RNB1KB1R w KQq -",
+      "answer": "Nxf8",
+      "answerFen": "r1bqkNr1/pppp3p/2n2n2/5p2/4P2Q/8/PPPP1PPP/RNB1KB1R b KQq -",
+      "eval": {"kind": "cp", "value": 314, "depth": 36},
+      "exampleLine": ["Nxf8", "Rg4", "Qh3", "Rxe4+", "Be2", "Kxf8", "Nc3", "Re6", "O-O", "d5", "d4", "Nxd4", "Bd3", "Kf7", "Be3", "c5", "Bxd4", "cxd4", "Ne2", "Qb6", "Nf4", "Re5", "Rae1", "Qd6", "Qh6", "Rxe1", "Rxe1", "Bd7", "a3", "Qf8", "Qh4", "Re8", "Rd1", "Qc5", "Nh5", "Nxh5", "Qxh5+", "Kg7"],
+      "otherAnswers": [
+        {"move": "e5", "eval": {"kind": "cp", "value": 108, "depth": 36}}
+      ],
+      "depth": 7,
+      "creationCriteria": {
+        "createdAt": "2026-02-04T08:58:48.183Z",
+        "input": {"movesSAN": ["e4", "e5", "Nf3", "f5", "Nxe5", "Nc6", "Qh5+", "g6", "Nxg6", "Nf6", "Qh4", "Rg8"], "pgn": "", "fen": "r1bqkbr1/pppp3p/2n2nN1/5p2/4P2Q/8/PPPP1PPP/RNB1KB1R w KQq -"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 1, "hash": 1024, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 456376,
+        "engineBest": {"move": "Nxf8", "eval": {"kind": "cp", "value": 314, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1770170054165_466u",
+      "children": [
+        "c_1770199132245_qcaj"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1770199132245_qcaj",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 Nf3 f5 Nxe5 Nc6 Qh5+ g6 Nxg6 Nf6 Qh4 Rg8 Nxf8 Rg4",
+      "fen": "r1bqkN2/pppp3p/2n2n2/5p2/4P1rQ/8/PPPP1PPP/RNB1KB1R w KQq -",
+      "answer": "Qh3",
+      "answerFen": "r1bqkN2/pppp3p/2n2n2/5p2/4P1r1/7Q/PPPP1PPP/RNB1KB1R b KQq -",
+      "eval": {"kind": "cp", "value": 323, "depth": 36},
+      "exampleLine": ["Qh3", "Rxe4+", "Be2", "Kxf8", "Nc3", "Re6", "O-O", "d5", "d4", "Nxd4", "Bd3", "c5", "Be3", "Kg8", "Bxd4", "cxd4", "Ne2", "Re7", "Qh4", "Qb6", "Qxd4", "Qxd4", "Nxd4", "Ne4", "Rfe1", "Kf7", "Re3", "Bd7", "Rae1", "Rae8", "f3", "Nd6", "Rxe7+", "Rxe7", "Rxe7+", "Kxe7", "Kf2", "Kf6", "Ne2", "Ke5", "f4+", "Ke6", "Nd4+", "Kf6", "b3", "Ne4+", "Bxe4", "dxe4", "Ke3", "Kg7"],
+      "otherAnswers": [
+        {"move": "Qh6", "eval": {"kind": "cp", "value": 246, "depth": 36}}
+      ],
+      "depth": 8,
+      "creationCriteria": {
+        "createdAt": "2026-02-04T09:58:52.245Z",
+        "input": {"movesSAN": ["e4", "e5", "Nf3", "f5", "Nxe5", "Nc6", "Qh5+", "g6", "Nxg6", "Nf6", "Qh4", "Rg8", "Nxf8", "Rg4"], "pgn": "", "fen": "r1bqkN2/pppp3p/2n2n2/5p2/4P1rQ/8/PPPP1PPP/RNB1KB1R w KQq -"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 1, "hash": 1024, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 602938,
+        "engineBest": {"move": "Qh3", "eval": {"kind": "cp", "value": 323, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1770195528183_wxnh",
+      "children": [
+        "c_1770219036907_w4g3"
+      ]
+    },
+    "due": "new"
+  },
+  {
+    "id": "c_1770219036907_w4g3",
+    "deck": "white-other",
+    "tags": [],
+    "fields": {
+      "moveSequence": "e4 e5 Nf3 f5 Nxe5 Nc6 Qh5+ g6 Nxg6 Nf6 Qh4 Rg8 Nxf8 Rg4 Qh3 Rxe4+",
+      "fen": "r1bqkN2/pppp3p/2n2n2/5p2/4r3/7Q/PPPP1PPP/RNB1KB1R w KQq -",
+      "answer": "Be2",
+      "answerFen": "r1bqkN2/pppp3p/2n2n2/5p2/4r3/7Q/PPPPBPPP/RNB1K2R b KQq -",
+      "eval": {"kind": "cp", "value": 331, "depth": 36},
+      "exampleLine": ["Be2", "Nd4", "Nc3", "Qe7", "Nxe4", "Qxe4", "O-O", "Nxe2+", "Kh1", "Qe7", "Nxh7", "Nxh7", "d3", "Nxc1", "Raxc1", "d6", "Rce1", "Be6", "Qh5+", "Kd7", "Rxe6", "Qxe6", "Qxh7+", "Kc6", "b3", "Rf8", "h3", "Re8", "Kg1", "Kb6", "Qh5", "f4", "Qf3", "Qh6", "a4"],
+      "otherAnswers": [
+        {"move": "Kd1", "eval": {"kind": "cp", "value": 240, "depth": 36}}
+      ],
+      "depth": 9,
+      "creationCriteria": {
+        "createdAt": "2026-02-04T15:30:36.907Z",
+        "input": {"movesSAN": ["e4", "e5", "Nf3", "f5", "Nxe5", "Nc6", "Qh5+", "g6", "Nxg6", "Nf6", "Qh4", "Rg8", "Nxf8", "Rg4", "Qh3", "Rxe4+"], "pgn": "", "fen": "r1bqkN2/pppp3p/2n2n2/5p2/4r3/7Q/PPPP1PPP/RNB1KB1R w KQq -"},
+        "configUsed": {"otherAnswersAcceptance": 0.5, "maxOtherAnswerCount": 10, "depth": 36, "threads": 1, "hash": 1024, "multipv": 11, "acceptanceCpWindow": 50},
+        "engineTimeMs": 189394,
+        "engineBest": {"move": "Be2", "eval": {"kind": "cp", "value": 331, "depth": 36}},
+        "forced": null,
+        "enginePath": "engines/stockfish.exe"
+      },
+      "parent": "c_1770199132245_qcaj"
+    },
+    "due": "new"
   }
 ]
