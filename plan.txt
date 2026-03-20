@@ -1,3 +1,6 @@
+add missed opportunities (as a tag?)
+    cards with a high eval, near zero eval parent, and no children
+    make the thresholds customizable (0.5,1 or 1,1.5, etc)
 Manual add:
     allow queueing of card creation
     allow input to be crafted via board UI
