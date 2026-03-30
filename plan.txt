@@ -1,3 +1,4 @@
+add togglable feature to select correct answer on first review
 add missed opportunities (as a tag?)
     cards with a high eval, near zero eval parent, and no children
     make the thresholds customizable (0.5,1 or 1,1.5, etc)
